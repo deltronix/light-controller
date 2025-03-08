@@ -3,6 +3,10 @@ name = "dmng_light_controller"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "dmng_light_controller"
+test = false
+
 [dependencies]
 control-surface = { path = "../control_surface/" }
 

@@ -36,8 +36,8 @@ const ADC2_DMA_REQ: u8 = 10;
 
 const INPUT_CHANNELS: usize = 4;
 const OUTPUT_CHANNELS: usize = 2;
-const BLOCK_SIZE: usize = 1;
-const DMA_BUFFER_SIZE: usize = 2;
+const BLOCK_SIZE: usize = 8;
+const DMA_BUFFER_SIZE: usize = BLOCK_SIZE * 2;
 
 type AdcDmaBuffer = [u16; INPUT_CHANNELS * DMA_BUFFER_SIZE];
 type DacDmaBuffer = [u32; DMA_BUFFER_SIZE];
@@ -46,6 +46,7 @@ type OutputFrame = [u16; OUTPUT_CHANNELS];
 type InputFrameChannel = Channel<'static, ThreadModeRawMutex, InputFrame>;
 type OutputFrameChannel = Channel<'static, ThreadModeRawMutex, OutputFrame>;
 
+#[derive(Clone, Copy)]
 struct PeakDetector {
     threshold: f32,
     is_armed: bool,
@@ -97,10 +98,10 @@ async fn write_dac(
             defmt::error!("DAC1 CH1 underrun!");
         }
         let buf = recv.receive().await;
-        defmt::debug!("dac1: {}, dac2: {}", buf[0], buf[1]);
+        debug!("dac dma got: {}", buf);
         let buf: u32 = buf[0] as u32 | (buf[1] as u32) << 16;
-        recv.receive_done();
         dma.write_exact(&[buf]).await.expect("DAC DMA Error");
+        recv.receive_done();
     }
 }
 #[embassy_executor::task]
@@ -115,33 +116,41 @@ async fn audio_process(
 
     let mut detector1: Detector<[f32; INPUT_CHANNELS], Peak> =
         Detector::peak_from_rectifier(peak::FullWave, 4.0, 4.0);
+    let mut peaks: [PeakDetector; INPUT_CHANNELS] = [PeakDetector::new(0.5); INPUT_CHANNELS];
 
-    let mut ring_buffer = dasp::ring_buffer::Bounded::from([[0.0f32; 4]; BLOCK_SIZE]);
-    let mut sample_buffer: [f32; INPUT_CHANNELS];
+    let mut ring_buffer = dasp::ring_buffer::Bounded::from([[0.0f32; 4]; BLOCK_SIZE * 2]);
 
     let mut sine = dasp::signal::rate(SAMPLE_RATE.0 as f64).const_hz(1.0).saw();
     loop {
+        //while !adc.is_empty()
         let frame = adc.receive().await;
-        sample_buffer = frame.map(f32::from_sample);
-        // ring_buffer.push(sample_buffer);
+        ring_buffer.push(frame.map(f32::from_sample));
         adc.receive_done();
 
-        defmt::debug!("adc: {}", sample_buffer);
-        // if ring_buffer.slices().0.len() == BLOCK_SIZE {
-        // let start = Instant::now();
-        // ring_buffer.slices().0.iter().for_each(|frame| {
-        //     let env = detector1.next(*frame);
-        //     defmt::debug!("{}", env);
-        // });
-        // let dur = Instant::now() - start;
-        // defmt::debug!("processing took: {}us", dur.as_micros());
-        // }
-
-        let output = u16::from_sample(sine.next());
+        if ring_buffer.slices().0.len() == BLOCK_SIZE {
+            let start = Instant::now();
+            ring_buffer.slices().0.iter().for_each(|frame| {
+                let env: [f32; INPUT_CHANNELS] = detector1.next(*frame);
+                debug!("env: {}", env);
+                env.iter().enumerate().for_each(|(ch, peak)| {
+                    if peaks[ch].process(*peak) {
+                        debug!("peak detected: {}", ch);
+                    }
+                })
+            });
+            let dur = Instant::now() - start;
+            defmt::debug!("processing took: {}us", dur.as_micros());
+        }
+        //while !dac.is_full()
         let out_frame = dac.send().await;
-        out_frame[0] = output;
-        out_frame[1] = output;
+        debug!("sending to dac: {}", out_frame);
+        out_frame.chunks_mut(2).into_iter().for_each(|f| {
+            let output = u16::from_sample(sine.next());
+            f[0] = output;
+            f[1] = output;
+        });
         dac.send_done();
+        //}
     }
 }
 
@@ -259,7 +268,9 @@ async fn main(spawner: Spawner) {
         });
     }
     static ADC_DMA_BUFFER: StaticCell<AdcDmaBuffer> = StaticCell::new();
-    let adc_dma_buf = ADC_DMA_BUFFER.init_with(|| AdcDmaBuffer::EQUILIBRIUM);
+    let adc_dma_buf = ADC_DMA_BUFFER.init_with(|| {
+        AdcDmaBuffer::from([<u16 as dasp::Sample>::EQUILIBRIUM; INPUT_CHANNELS * DMA_BUFFER_SIZE])
+    });
     let adc2_dma = unsafe {
         ReadableRingBuffer::new(
             p.DMA1_CH0,
@@ -294,14 +305,14 @@ async fn main(spawner: Spawner) {
         tim6
     };
 
-    static INPUT_BUFFER: StaticCell<[InputFrame; 2]> = StaticCell::new();
-    let input_buffer = INPUT_BUFFER.init([InputFrame::default(); 2]);
+    static INPUT_BUFFER: StaticCell<[InputFrame; BLOCK_SIZE]> = StaticCell::new();
+    let input_buffer = INPUT_BUFFER.init([InputFrame::default(); BLOCK_SIZE]);
     static INPUT_CHANNEL: StaticCell<InputFrameChannel> = StaticCell::new();
     let input_channel = INPUT_CHANNEL.init_with(|| InputFrameChannel::new(input_buffer));
     let (input_sender, input_receiver) = input_channel.split();
 
-    static OUTPUT_BUFFER: StaticCell<[OutputFrame; 2]> = StaticCell::new();
-    let output_buffer = OUTPUT_BUFFER.init([OutputFrame::default(); 2]);
+    static OUTPUT_BUFFER: StaticCell<[OutputFrame; BLOCK_SIZE]> = StaticCell::new();
+    let output_buffer = OUTPUT_BUFFER.init([OutputFrame::default(); BLOCK_SIZE]);
     static OUTPUT_CHANNEL: StaticCell<OutputFrameChannel> = StaticCell::new();
     let output_channel = OUTPUT_CHANNEL.init_with(|| OutputFrameChannel::new(output_buffer));
     let (output_sender, output_receiver) = output_channel.split();
