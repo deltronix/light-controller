@@ -5,9 +5,12 @@
 use {defmt_rtt as _, panic_probe as _};
 
 use dasp::envelope::Detect;
-use dasp::{Frame, Sample, Signal};
+use dasp::sample::SignedSample;
+use dasp::slice::ToFrameSlice;
+use dasp::{Frame, Sample, Signal, sample};
 use defmt::{debug, info, todo};
 use embassy_executor::Spawner;
+use embassy_futures::select::select;
 use embassy_stm32::Config;
 use embassy_stm32::adc::SampleTime;
 use embassy_stm32::dma::{NoDma, ReadableRingBuffer, TransferOptions, WritableRingBuffer};
@@ -26,17 +29,19 @@ use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::zerocopy_channel::{Channel, Receiver, Sender};
 use embassy_time::{Duration, Instant, Timer};
 
+use embedded_hal::digital::StatefulOutputPin;
+use embedded_io_async::{Read, Write};
 use microdsp::sfnov::{HardKneeCompression, SpectralFluxNoveltyDetector};
 use static_cell::StaticCell;
 type DetectorType = SpectralFluxNoveltyDetector<HardKneeCompression>;
 
-const SAMPLE_RATE: Hertz = Hertz(1000);
+const SAMPLE_RATE: Hertz = Hertz(24_000);
 
 const ADC2_DMA_REQ: u8 = 10;
 
 const INPUT_CHANNELS: usize = 4;
 const OUTPUT_CHANNELS: usize = 2;
-const BLOCK_SIZE: usize = 8;
+const BLOCK_SIZE: usize = 16;
 const DMA_BUFFER_SIZE: usize = BLOCK_SIZE * 2;
 
 type AdcDmaBuffer = [u16; INPUT_CHANNELS * DMA_BUFFER_SIZE];
@@ -47,27 +52,118 @@ type InputFrameChannel = Channel<'static, ThreadModeRawMutex, InputFrame>;
 type OutputFrameChannel = Channel<'static, ThreadModeRawMutex, OutputFrame>;
 
 #[derive(Clone, Copy)]
-struct PeakDetector {
-    threshold: f32,
+struct Comparator<T> {
+    threshold: T,
     is_armed: bool,
 }
 
-impl PeakDetector {
-    fn new(threshold: f32) -> Self {
-        PeakDetector {
+enum AnalogEvent {}
+
+impl<T> Comparator<T>
+where
+    T: PartialOrd,
+{
+    fn new(threshold: T) -> Self {
+        Comparator {
             threshold,
             is_armed: true,
         }
     }
 
-    fn process(&mut self, input: f32) -> bool {
+    fn process(&mut self, input: T) -> Option<bool> {
         if input > self.threshold && self.is_armed {
             self.is_armed = false;
-            return true;
+            return Some(true);
         } else if input < self.threshold {
             self.is_armed = true;
+            return Some(false);
         };
-        false
+        None
+    }
+}
+
+struct DetectorConfig<T> {
+    threshold: T,
+    attack: f32,
+    release: f32,
+}
+
+const fn ms_to_frames(ms: f32) -> f32 {
+    const SAMPLE_RATIO: f32 = (SAMPLE_RATE.0 as f32) / 1000.0;
+
+    ms * SAMPLE_RATIO
+}
+
+#[embassy_executor::task]
+async fn peak_detector(mut rb_in: ReadableRingBuffer<'static, u16>, mut ld: Output<'static>) {
+    use dasp::envelope::Detector;
+    use dasp::envelope::detect::Peak;
+    use dasp::frame::N4;
+    use dasp::peak;
+    let mut input_buffer: [u16; INPUT_CHANNELS * BLOCK_SIZE] = [0; INPUT_CHANNELS * BLOCK_SIZE];
+    let mut envelope_detector1: Detector<[f32; INPUT_CHANNELS], Peak> =
+        Detector::peak_from_rectifier(peak::FullWave, ms_to_frames(1.0), ms_to_frames(100.0));
+    let mut envelope_detector2: Detector<[f32; INPUT_CHANNELS], Peak> =
+        Detector::peak_from_rectifier(peak::FullWave, ms_to_frames(20.0), ms_to_frames(100.0));
+
+    let mut peak_detector: [Comparator<f32>; INPUT_CHANNELS] =
+        [Comparator::new(0.01f32); INPUT_CHANNELS];
+    rb_in.start();
+    loop {
+        rb_in
+            .read_exact(&mut input_buffer)
+            .await
+            .expect("ADC DMA Error");
+
+        input_buffer
+            .map(|f| f.to_float_sample())
+            .chunks_exact(INPUT_CHANNELS)
+            .for_each(|frame| {
+                if let Some(frame) = frame.as_array() {
+                    let env1: [f32; INPUT_CHANNELS] = envelope_detector1.next(*frame);
+                    let env2: [f32; INPUT_CHANNELS] = envelope_detector2.next(*frame);
+
+                    let diff: [f32; INPUT_CHANNELS] = env1.zip_map(env2, |e1, e2| (e1 - e2));
+
+                    diff.iter().enumerate().for_each(|(ch, peak)| {
+                        match peak_detector[ch].process(*peak) {
+                            Some(true) => {
+                                debug!("peak detected on ch: {}", ch);
+                                ld.set_high();
+                            }
+                            Some(false) => {
+                                ld.set_low();
+                            }
+                            None => {} // debug!("peak detected: {}", ch);
+                        }
+                    })
+                }
+            });
+    }
+}
+
+#[embassy_executor::task]
+async fn signal_generator(mut rb_out: WritableRingBuffer<'static, u32>) {
+    let mut saw = dasp::signal::rate(SAMPLE_RATE.0 as f64).const_hz(1.0).saw();
+    let mut output_buffer: [u32; 2] = [0; 2];
+    output_buffer.iter_mut().for_each(|frame| {
+        let out = u16::from_sample(saw.next());
+        *frame = out as u32 | (out as u32) << 16;
+    });
+    rb_out.start();
+    loop {
+        match rb_out.write_exact(&output_buffer).await {
+            Ok(remaining) => {
+                //debug!("dac written! remaining: {}", remaining);
+            }
+            Err(e) => {
+                debug!("dac write error! {}", e);
+            }
+        }
+        output_buffer.iter_mut().for_each(|frame| {
+            let out = u16::from_sample(saw.next());
+            *frame = out as u32 | (out as u32) << 16;
+        });
     }
 }
 
@@ -98,7 +194,6 @@ async fn write_dac(
             defmt::error!("DAC1 CH1 underrun!");
         }
         let buf = recv.receive().await;
-        debug!("dac dma got: {}", buf);
         let buf: u32 = buf[0] as u32 | (buf[1] as u32) << 16;
         dma.write_exact(&[buf]).await.expect("DAC DMA Error");
         recv.receive_done();
@@ -116,7 +211,7 @@ async fn audio_process(
 
     let mut detector1: Detector<[f32; INPUT_CHANNELS], Peak> =
         Detector::peak_from_rectifier(peak::FullWave, 4.0, 4.0);
-    let mut peaks: [PeakDetector; INPUT_CHANNELS] = [PeakDetector::new(0.5); INPUT_CHANNELS];
+    let mut peaks: [Comparator<f32>; INPUT_CHANNELS] = [Comparator::new(0.5); INPUT_CHANNELS];
 
     let mut ring_buffer = dasp::ring_buffer::Bounded::from([[0.0f32; 4]; BLOCK_SIZE * 2]);
 
@@ -131,19 +226,17 @@ async fn audio_process(
             let start = Instant::now();
             ring_buffer.slices().0.iter().for_each(|frame| {
                 let env: [f32; INPUT_CHANNELS] = detector1.next(*frame);
-                debug!("env: {}", env);
                 env.iter().enumerate().for_each(|(ch, peak)| {
-                    if peaks[ch].process(*peak) {
+                    if peaks[ch].process(*peak).is_some_and(|f| f) {
                         debug!("peak detected: {}", ch);
                     }
                 })
             });
             let dur = Instant::now() - start;
-            defmt::debug!("processing took: {}us", dur.as_micros());
+            //defmt::debug!("processing took: {}us", dur.as_micros());
         }
         //while !dac.is_full()
         let out_frame = dac.send().await;
-        debug!("sending to dac: {}", out_frame);
         out_frame.chunks_mut(2).into_iter().for_each(|f| {
             let output = u16::from_sample(sine.next());
             f[0] = output;
@@ -198,7 +291,9 @@ async fn main(spawner: Spawner) {
 
     let p = embassy_stm32::init(config);
 
-    let mut led = Output::new(p.PB7, Level::High, Speed::Low);
+    let mut ld1 = Output::new(p.PB0, Level::High, Speed::Low);
+    let mut ld2 = Output::new(p.PE1, Level::High, Speed::Low);
+    let mut ld3 = Output::new(p.PB14, Level::High, Speed::Low);
 
     let mut dac = {
         let dac1_1 = p.PA4;
@@ -305,33 +400,36 @@ async fn main(spawner: Spawner) {
         tim6
     };
 
-    static INPUT_BUFFER: StaticCell<[InputFrame; BLOCK_SIZE]> = StaticCell::new();
-    let input_buffer = INPUT_BUFFER.init([InputFrame::default(); BLOCK_SIZE]);
-    static INPUT_CHANNEL: StaticCell<InputFrameChannel> = StaticCell::new();
-    let input_channel = INPUT_CHANNEL.init_with(|| InputFrameChannel::new(input_buffer));
-    let (input_sender, input_receiver) = input_channel.split();
+    // static INPUT_BUFFER: StaticCell<[InputFrame; BLOCK_SIZE]> = StaticCell::new();
+    // let input_buffer = INPUT_BUFFER.init([InputFrame::default(); BLOCK_SIZE]);
+    // static INPUT_CHANNEL: StaticCell<InputFrameChannel> = StaticCell::new();
+    // let input_channel = INPUT_CHANNEL.init_with(|| InputFrameChannel::new(input_buffer));
+    // let (input_sender, input_receiver) = input_channel.split();
+    //
+    // static OUTPUT_BUFFER: StaticCell<[OutputFrame; BLOCK_SIZE]> = StaticCell::new();
+    // let output_buffer = OUTPUT_BUFFER.init([OutputFrame::default(); BLOCK_SIZE]);
+    // static OUTPUT_CHANNEL: StaticCell<OutputFrameChannel> = StaticCell::new();
+    // let output_channel = OUTPUT_CHANNEL.init_with(|| OutputFrameChannel::new(output_buffer));
+    // let (output_sender, output_receiver) = output_channel.split();
 
-    static OUTPUT_BUFFER: StaticCell<[OutputFrame; BLOCK_SIZE]> = StaticCell::new();
-    let output_buffer = OUTPUT_BUFFER.init([OutputFrame::default(); BLOCK_SIZE]);
-    static OUTPUT_CHANNEL: StaticCell<OutputFrameChannel> = StaticCell::new();
-    let output_channel = OUTPUT_CHANNEL.init_with(|| OutputFrameChannel::new(output_buffer));
-    let (output_sender, output_receiver) = output_channel.split();
+    // defmt::unwrap!(spawner.spawn(read_adc(adc2_dma, input_sender)));
+    // defmt::unwrap!(spawner.spawn(audio_process(input_receiver, output_sender)));
+    // defmt::unwrap!(spawner.spawn(write_dac(dac1_dma, output_receiver)));
+    defmt::unwrap!(spawner.spawn(peak_detector(adc2_dma, ld2)));
+    defmt::unwrap!(spawner.spawn(signal_generator(dac1_dma)));
 
-    defmt::unwrap!(spawner.spawn(read_adc(adc2_dma, input_sender)));
-    defmt::unwrap!(spawner.spawn(audio_process(input_receiver, output_sender)));
-    defmt::unwrap!(spawner.spawn(write_dac(dac1_dma, output_receiver)));
-
+    Timer::after_millis(100).await;
+    pac::ADC2.cr().modify(|cr| cr.set_adstart(true));
     analog_clock.start();
     // tim3.start();
-    pac::ADC2.cr().modify(|cr| cr.set_adstart(true));
     loop {
         //info!("Hello, World!");
-        led.set_high();
+        ld1.set_high();
         // let vref_int = adc2.blocking_read(&mut vrefint_channel) as f32 / u16::MAX as f32;
         // let adc = adc2.blocking_read(&mut adc2_3) as f32 / u16::MAX as f32;
         // info!("vref_int: {}, adc 2: {}", vref_int, adc);
         Timer::after(Duration::from_millis(500)).await;
-        led.set_low();
+        ld1.set_low();
         Timer::after(Duration::from_millis(500)).await;
     }
 }
