@@ -12,10 +12,12 @@ use dasp::{Frame, Sample, Signal, sample};
 use defmt::{debug, error, info, todo};
 use embassy_executor::Spawner;
 use embassy_futures::select::select;
+
 use embassy_stm32::Config;
 use embassy_stm32::adc::SampleTime;
 use embassy_stm32::dma::{NoDma, ReadableRingBuffer, TransferOptions, WritableRingBuffer};
 use embassy_stm32::pac;
+use embassy_stm32::pac::rtc::regs::Tr;
 use embassy_stm32::peripherals::{ADC2, TIM12};
 use embassy_stm32::time::Hertz;
 use embassy_stm32::timer::simple_pwm::{PwmPin, SimplePwm};
@@ -38,13 +40,13 @@ use microdsp::sfnov::{HardKneeCompression, SpectralFluxNoveltyDetector};
 use static_cell::StaticCell;
 type DetectorType = SpectralFluxNoveltyDetector<HardKneeCompression>;
 
-const SAMPLE_RATE: Hertz = Hertz(24_000);
+const SAMPLE_RATE: Hertz = Hertz(8_000);
 
 const ADC2_DMA_REQ: u8 = 10;
 
-const INPUT_CHANNELS: usize = 4;
+const INPUT_CHANNELS: usize = 8;
 const OUTPUT_CHANNELS: usize = 2;
-const BLOCK_SIZE: usize = 16;
+const BLOCK_SIZE: usize = 32;
 const DMA_BUFFER_SIZE: usize = BLOCK_SIZE * 2;
 
 type AdcDmaBuffer = [u16; INPUT_CHANNELS * DMA_BUFFER_SIZE];
@@ -87,12 +89,6 @@ where
     }
 }
 
-struct DetectorConfig<T> {
-    threshold: T,
-    attack: f32,
-    release: f32,
-}
-
 const fn ms_to_frames(ms: f32) -> f32 {
     const SAMPLE_RATIO: f32 = (SAMPLE_RATE.0 as f32) / 1000.0;
     ms * SAMPLE_RATIO
@@ -105,15 +101,15 @@ async fn led_controller(
 ) {
     let mut intensity: u16 = 0;
     let max_intensity: u16 = pwm.ch1().max_duty_cycle();
-    let release: u16 = max_intensity / 100;
+    let release: u16 = max_intensity / 10;
 
     pwm.ch1().enable();
     loop {
         if let Some(event) = ev.try_receive() {
             match event {
                 Event::AnalogTrigger(channel) => {
-                    debug!("trig received, ch: {}", channel);
                     if *channel == 1usize {
+                        debug!("trig received, ch: {}", channel);
                         debug!("TRIG!");
                         intensity = max_intensity;
                     }
@@ -134,24 +130,40 @@ async fn peak_detector(
     mut ld: Output<'static>,
     mut ev: Sender<'static, ThreadModeRawMutex, Event>,
 ) {
+    type SampleType = f32;
     use dasp::Signal;
     use dasp::envelope::Detector;
     use dasp::envelope::detect::Peak;
     use dasp::frame::N4;
     use dasp::peak;
     use dasp::rms::Rms;
+    use light_controller::dsp::TransientDetector;
+
+    let mut td: TransientDetector<INPUT_CHANNELS, BLOCK_SIZE> = TransientDetector::new(
+        ms_to_frames(1.0),
+        ms_to_frames(100.0),
+        ms_to_frames(10.0),
+        ms_to_frames(100.0),
+        0.02,
+    );
+
     let mut input_buffer: [u16; INPUT_CHANNELS * BLOCK_SIZE] = [0; INPUT_CHANNELS * BLOCK_SIZE];
 
-    let mut envelope_detector1: Detector<[f32; INPUT_CHANNELS], Peak> =
+    let mut envelope_detector1: Detector<[SampleType; INPUT_CHANNELS], Peak> =
         Detector::peak_from_rectifier(peak::FullWave, ms_to_frames(1.0), ms_to_frames(100.0));
-    let mut envelope_detector2: Detector<[f32; INPUT_CHANNELS], Peak> =
+    let mut envelope_detector2: Detector<[SampleType; INPUT_CHANNELS], Peak> =
         Detector::peak_from_rectifier(peak::FullWave, ms_to_frames(20.0), ms_to_frames(100.0));
 
-    let mut comparator: [Comparator<f32>; INPUT_CHANNELS] =
-        [Comparator::new(0.01f32); INPUT_CHANNELS];
+    let mut comparator: [Comparator<SampleType>; INPUT_CHANNELS] =
+        [Comparator::new(SampleType::from_sample(0.01f32)); INPUT_CHANNELS];
 
-    let samples: heapless::Vec<[f32; INPUT_CHANNELS], BLOCK_SIZE> = Vec::new();
-    let mut triggers: [Option<bool>; 4] = [None; 4];
+    let mut samples: [[SampleType; INPUT_CHANNELS]; BLOCK_SIZE];
+    let mut triggers: [Option<bool>; INPUT_CHANNELS];
+
+    let mut env1: [SampleType; INPUT_CHANNELS] = [SampleType::default(); INPUT_CHANNELS];
+    let mut env2: [SampleType; INPUT_CHANNELS] = [SampleType::default(); INPUT_CHANNELS];
+    let mut diff: [SampleType; INPUT_CHANNELS] = [SampleType::default(); INPUT_CHANNELS];
+    rb_in.clear();
     rb_in.start();
     loop {
         rb_in
@@ -159,6 +171,7 @@ async fn peak_detector(
             .await
             .expect("ADC DMA Error");
 
+        let start = Instant::now();
         // transmute [u16; N * M] to [[u16; N]; M]
         let frames = unsafe {
             core::mem::transmute::<
@@ -167,45 +180,31 @@ async fn peak_detector(
             >(input_buffer)
         };
 
-        let samples: [[f32; INPUT_CHANNELS]; BLOCK_SIZE] = frames.map(|f| f.to_float_frame());
+        samples = frames.map(|f| f.to_float_frame());
+        triggers = td.process_block(&samples);
 
-        // input_buffer
-        //     .map(|f| f.to_float_sample())
-        //     .chunks_exact(INPUT_CHANNELS)
-        //
-        triggers = samples.iter().fold([None; 4], |mut acc, frame| {
-            if let Some(frame) = frame.as_array() {
-                let env1: [f32; INPUT_CHANNELS] = envelope_detector1.next(*frame);
-                let env2: [f32; INPUT_CHANNELS] = envelope_detector2.next(*frame);
-
-                let diff: [f32; INPUT_CHANNELS] = env1.zip_map(env2, |e1, e2| (e1 - e2));
-
-                diff.iter().enumerate().for_each(|(ch, diff)| {
-                    match comparator[ch].process(*diff) {
-                        Some(true) => {
-                            //{
-                            //     Some(event) => *event = Event::AnalogTrigger(ch),
-                            //     None => {
-                            //         error!("Event channel full");
-                            //     }
-                            // }
-                            // ev.send_done();
-                            debug!("peak detected on ch: {}", ch);
-                            acc[ch] = Some(true);
-                            ld.set_high();
-                        }
-                        Some(false) => {
-                            acc[ch] = Some(false);
-                            ld.set_low();
-                        }
-                        None => {}
-                    }
-                });
-            } else {
-                panic!("could not convert to frame")
-            }
-            acc
-        });
+        // triggers = samples
+        //     .iter()
+        //     .fold([None; INPUT_CHANNELS], |mut acc, frame| {
+        //         env1 = envelope_detector1.next(*frame);
+        //         env2 = envelope_detector2.next(*frame);
+        //         diff = env1.zip_map(env2, |e1, e2| (e1 - e2));
+        //         diff.iter().enumerate().for_each(|(ch, diff)| {
+        //             match comparator[ch].process(*diff) {
+        //                 Some(true) => {
+        //                     //debug!("peak detected on ch: {}", ch);
+        //                     acc[ch] = Some(true);
+        //                     ld.set_high();
+        //                 }
+        //                 Some(false) => {
+        //                     acc[ch] = Some(false);
+        //                     ld.set_low();
+        //                 }
+        //                 None => {}
+        //             }
+        //         });
+        //         acc
+        //     });
 
         triggers.iter().enumerate().for_each(|(ch, t)| {
             if t.is_some_and(|t| t) {
@@ -214,7 +213,12 @@ async fn peak_detector(
                     ev.send_done();
                 }
             }
-        })
+        });
+        debug!("max diff: {}", td.max_diff[1]);
+        // debug!(
+        //     "processing time: {}us",
+        //     (Instant::now() - start).as_micros()
+        // );
     }
 }
 
@@ -273,53 +277,6 @@ async fn write_dac(
         let buf: u32 = buf[0] as u32 | (buf[1] as u32) << 16;
         dma.write_exact(&[buf]).await.expect("DAC DMA Error");
         recv.receive_done();
-    }
-}
-#[embassy_executor::task]
-async fn audio_process(
-    mut adc: Receiver<'static, ThreadModeRawMutex, InputFrame>,
-    mut dac: Sender<'static, ThreadModeRawMutex, OutputFrame>,
-) {
-    use dasp::envelope::Detector;
-    use dasp::envelope::detect::Peak;
-    use dasp::peak;
-    use dasp::signal::Sine;
-
-    let mut detector1: Detector<[f32; INPUT_CHANNELS], Peak> =
-        Detector::peak_from_rectifier(peak::FullWave, 4.0, 4.0);
-    let mut peaks: [Comparator<f32>; INPUT_CHANNELS] = [Comparator::new(0.5); INPUT_CHANNELS];
-
-    let mut ring_buffer = dasp::ring_buffer::Bounded::from([[0.0f32; 4]; BLOCK_SIZE * 2]);
-
-    let mut sine = dasp::signal::rate(SAMPLE_RATE.0 as f64).const_hz(1.0).saw();
-    loop {
-        //while !adc.is_empty()
-        let frame = adc.receive().await;
-        ring_buffer.push(frame.map(f32::from_sample));
-        adc.receive_done();
-
-        if ring_buffer.slices().0.len() == BLOCK_SIZE {
-            let start = Instant::now();
-            ring_buffer.slices().0.iter().for_each(|frame| {
-                let env: [f32; INPUT_CHANNELS] = detector1.next(*frame);
-                env.iter().enumerate().for_each(|(ch, peak)| {
-                    if peaks[ch].process(*peak).is_some_and(|f| f) {
-                        debug!("peak detected: {}", ch);
-                    }
-                })
-            });
-            let dur = Instant::now() - start;
-            //defmt::debug!("processing took: {}us", dur.as_micros());
-        }
-        //while !dac.is_full()
-        let out_frame = dac.send().await;
-        out_frame.chunks_mut(2).into_iter().for_each(|f| {
-            let output = u16::from_sample(sine.next());
-            f[0] = output;
-            f[1] = output;
-        });
-        dac.send_done();
-        //}
     }
 }
 
@@ -406,7 +363,7 @@ async fn main(spawner: Spawner) {
     };
 
     static DAC1_DMA_BUFFER: StaticCell<DacDmaBuffer> = StaticCell::new();
-    let dac1_dma_buf = DAC1_DMA_BUFFER.init_with(|| DacDmaBuffer::EQUILIBRIUM);
+    let dac1_dma_buf = DAC1_DMA_BUFFER.init_with(|| DacDmaBuffer::from([0; DMA_BUFFER_SIZE]));
 
     let dac1_dma = unsafe {
         WritableRingBuffer::new(
@@ -422,9 +379,13 @@ async fn main(spawner: Spawner) {
     let _adc2_3: AnyAdcChannel<ADC2> = p.PA6.degrade_adc();
     let _adc2_4: AnyAdcChannel<ADC2> = p.PC4.degrade_adc();
     let _adc2_5: AnyAdcChannel<ADC2> = p.PB1.degrade_adc();
+    let _adc2_6: AnyAdcChannel<ADC2> = p.PF14.degrade_adc();
+    let _adc2_7: AnyAdcChannel<ADC2> = p.PA7.degrade_adc();
+    let _adc2_8: AnyAdcChannel<ADC2> = p.PC5.degrade_adc();
+    let _adc2_11: AnyAdcChannel<ADC2> = p.PC1.degrade_adc();
 
     let mut adc2 = Adc::new(p.ADC2);
-    adc2.set_sample_time(SampleTime::CYCLES64_5);
+    adc2.set_sample_time(SampleTime::CYCLES8_5);
     adc2.set_resolution(embassy_stm32::adc::Resolution::BITS16);
 
     {
@@ -434,13 +395,23 @@ async fn main(spawner: Spawner) {
             r.set_pcsel(3, Pcsel::PRESELECTED);
             r.set_pcsel(4, Pcsel::PRESELECTED);
             r.set_pcsel(5, Pcsel::PRESELECTED);
+            r.set_pcsel(6, Pcsel::PRESELECTED);
+            r.set_pcsel(7, Pcsel::PRESELECTED);
+            r.set_pcsel(8, Pcsel::PRESELECTED);
+            r.set_pcsel(11, Pcsel::PRESELECTED);
         });
         pac::ADC2.sqr1().modify(|sqr1| {
-            sqr1.set_l(3);
+            sqr1.set_l((INPUT_CHANNELS - 1) as u8);
             sqr1.set_sq(0, 2);
             sqr1.set_sq(1, 3);
             sqr1.set_sq(2, 4);
             sqr1.set_sq(3, 5);
+        });
+        pac::ADC2.sqr2().modify(|sqr2| {
+            sqr2.set_sq(0, 6);
+            sqr2.set_sq(1, 7);
+            sqr2.set_sq(2, 8);
+            sqr2.set_sq(3, 11);
         });
 
         pac::ADC2.cfgr().modify(|r| {
@@ -513,7 +484,7 @@ async fn main(spawner: Spawner) {
     defmt::unwrap!(spawner.spawn(signal_generator(dac1_dma)));
     defmt::unwrap!(spawner.spawn(led_controller(event_receiver, pwm)));
 
-    Timer::after_millis(100).await;
+    Timer::after_millis(200).await;
     pac::ADC2.cr().modify(|cr| cr.set_adstart(true));
     analog_clock.start();
     // tim3.start();

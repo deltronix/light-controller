@@ -6,6 +6,11 @@ edition = "2024"
 [[bin]]
 name = "dmng_light_controller"
 test = false
+bench = false
+
+[lib]
+name = "light_controller"
+path = "src/lib.rs"
 
 [dependencies]
 control-surface = { path = "../control_surface/" }
@@ -61,10 +66,8 @@ static_cell = "2"
 micromath = "2.0.0"
 
 embedded-io-async = { version = "0.6.1", features = ["defmt-03"] }
-rosc = { path = "../rosc/", default-features = false }
 emballoc = "0.3.0"
 embedded-hal = { version = "1.0.0", features = ["defmt-03"] }
-statig = "0.3.0"
 dasp = { version = "0.11.0", default-features = false, features = [
   "all-no-std",
   "slice",
