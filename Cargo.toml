@@ -12,9 +12,8 @@ bench = false
 name = "light_controller"
 path = "src/lib.rs"
 
-[dependencies]
+[target.'cfg(target_arch = "arm")'.dependencies]
 control-surface = { path = "../control_surface/" }
-
 embassy-net = { version = "0.6", path = "../embassy/embassy-net/", features = [
   "defmt",
   "tcp",
@@ -61,6 +60,7 @@ cortex-m-rt = "0.7"
 panic-probe = { version = "0.3.2", features = ["print-defmt"] }
 critical-section = "1.1"
 
+[dependencies]
 heapless = { version = "0.8", default-features = false }
 static_cell = "2"
 micromath = "2.0.0"
