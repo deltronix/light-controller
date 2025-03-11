@@ -139,30 +139,18 @@ async fn peak_detector(
     use dasp::rms::Rms;
     use light_controller::dsp::TransientDetector;
 
-    let mut td: TransientDetector<INPUT_CHANNELS, BLOCK_SIZE> = TransientDetector::new(
-        ms_to_frames(1.0),
-        ms_to_frames(100.0),
-        ms_to_frames(10.0),
-        ms_to_frames(100.0),
-        0.02,
-    );
-
     let mut input_buffer: [u16; INPUT_CHANNELS * BLOCK_SIZE] = [0; INPUT_CHANNELS * BLOCK_SIZE];
-
-    let mut envelope_detector1: Detector<[SampleType; INPUT_CHANNELS], Peak> =
-        Detector::peak_from_rectifier(peak::FullWave, ms_to_frames(1.0), ms_to_frames(100.0));
-    let mut envelope_detector2: Detector<[SampleType; INPUT_CHANNELS], Peak> =
-        Detector::peak_from_rectifier(peak::FullWave, ms_to_frames(20.0), ms_to_frames(100.0));
-
-    let mut comparator: [Comparator<SampleType>; INPUT_CHANNELS] =
-        [Comparator::new(SampleType::from_sample(0.01f32)); INPUT_CHANNELS];
-
     let mut samples: [[SampleType; INPUT_CHANNELS]; BLOCK_SIZE];
     let mut triggers: [Option<bool>; INPUT_CHANNELS];
 
-    let mut env1: [SampleType; INPUT_CHANNELS] = [SampleType::default(); INPUT_CHANNELS];
-    let mut env2: [SampleType; INPUT_CHANNELS] = [SampleType::default(); INPUT_CHANNELS];
-    let mut diff: [SampleType; INPUT_CHANNELS] = [SampleType::default(); INPUT_CHANNELS];
+    let mut td: TransientDetector<INPUT_CHANNELS, BLOCK_SIZE> = TransientDetector::new(
+        ms_to_frames(2.0),
+        ms_to_frames(80.0),
+        ms_to_frames(20.0),
+        ms_to_frames(80.0),
+        0.02,
+    );
+
     rb_in.clear();
     rb_in.start();
     loop {
@@ -182,30 +170,6 @@ async fn peak_detector(
 
         samples = frames.map(|f| f.to_float_frame());
         triggers = td.process_block(&samples);
-
-        // triggers = samples
-        //     .iter()
-        //     .fold([None; INPUT_CHANNELS], |mut acc, frame| {
-        //         env1 = envelope_detector1.next(*frame);
-        //         env2 = envelope_detector2.next(*frame);
-        //         diff = env1.zip_map(env2, |e1, e2| (e1 - e2));
-        //         diff.iter().enumerate().for_each(|(ch, diff)| {
-        //             match comparator[ch].process(*diff) {
-        //                 Some(true) => {
-        //                     //debug!("peak detected on ch: {}", ch);
-        //                     acc[ch] = Some(true);
-        //                     ld.set_high();
-        //                 }
-        //                 Some(false) => {
-        //                     acc[ch] = Some(false);
-        //                     ld.set_low();
-        //                 }
-        //                 None => {}
-        //             }
-        //         });
-        //         acc
-        //     });
-
         triggers.iter().enumerate().for_each(|(ch, t)| {
             if t.is_some_and(|t| t) {
                 if let Some(event) = ev.try_send() {
