@@ -12,6 +12,8 @@ doctest = false
 [lib]
 name = "board"
 path = "src/lib.rs"
+test = false
+bench = false
 
 
 [dependencies]

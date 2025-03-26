@@ -2,25 +2,20 @@
 
 use embassy_stm32::dac::Dac;
 use embassy_stm32::mode::Blocking;
-use embassy_stm32::pac::common::Read;
-use embassy_stm32::pac::dma::Dma;
 use embassy_stm32::peripherals::TIM12;
 use embassy_stm32::timer::low_level::Timer;
-use embassy_stm32::{Config, Peripheral};
 use embassy_stm32::{
     Peripherals,
     adc::{Adc, AdcChannel, AnyAdcChannel, SampleTime},
-    dma::{NoDma, ReadableRingBuffer, TransferOptions, WritableRingBuffer},
+    dma::NoDma,
     gpio::{Level, Output, OutputType, Speed},
     pac::{self as pac},
-    peripherals::*,
+    peripherals::{ADC2, DAC1, TIM6},
     spi::Spi,
     time::Hertz,
     timer::simple_pwm::{PwmPin, SimplePwm},
 };
-use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, zerocopy_channel::Channel};
 use p9813::P9813;
-use static_cell::StaticCell;
 const SAMPLE_RATE: Hertz = Hertz(8_000);
 
 const ADC2_DMA_REQ: u8 = 10;
@@ -48,9 +43,7 @@ pub struct Board {
 }
 
 impl Board {
-    pub fn init(cfg: Config) -> Self {
-        let p = clocks::config(cfg);
-
+    pub fn init(p: Peripherals) -> Self {
         let status_leds = {
             let ld1 = Output::new(p.PB0, Level::High, Speed::Low);
             let ld2 = Output::new(p.PE1, Level::High, Speed::Low);
