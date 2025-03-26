@@ -6,3 +6,14 @@ resolver = "3"
 num-traits = { version = "0.2.19", default-features = false, features = [
   "libm",
 ] }
+embassy-net = { version = "0.6", features = ["defmt", "tcp", "udp", "dhcpv4"] }
+embassy-futures = { version = "0.1.1" }
+embassy-stm32 = { version = "0.2.0", features = [
+  "chrono",
+  "exti",
+  "defmt",
+  "memory-x",
+  "stm32h743zi",
+  "unstable-pac",
+  "time-driver-tim4",
+] }

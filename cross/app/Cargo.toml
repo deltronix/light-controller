@@ -8,26 +8,30 @@ name = "app"
 test = false
 bench = false
 doctest = false
+
 [lib]
 name = "board"
 path = "src/lib.rs"
 
+
 [dependencies]
+# Embassy
 embassy-net = { workspace = true }
 embassy-futures = { workspace = true }
 embassy-stm32 = { workspace = true }
 embassy-sync = { workspace = true }
 embassy-executor = { workspace = true }
 embassy-time = { workspace = true }
-embassy-usb = { workspace = true }
 
-defmt-rtt = { workspace = true }
-defmt = { workspace = true }
+
 cortex-m = { version = "0.7.7", features = [
   "inline-asm",
   "critical-section-single-core",
 ] }
 cortex-m-rt = "0.7"
+defmt-rtt = { workspace = true }
+defmt = { workspace = true }
+
 panic-probe = { version = "0.3.2", features = ["print-defmt"] }
 critical-section = "1.1"
 
