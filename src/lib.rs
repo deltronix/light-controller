@@ -2,7 +2,7 @@
 
 pub mod dsp {
     use num_traits::float::Float;
-    pub struct TransientDetector<const N_CHANNELS: usize, const BLOCK_SIZE: usize> {
+    pub struct TransientDetector<const N_CHANNELS: usize> {
         fast_attack: f32,
         fast_release: f32,
         slow_attack: f32,
@@ -17,7 +17,7 @@ pub mod dsp {
         trig: [Option<bool>; N_CHANNELS],
     }
 
-    impl<const N_CHANNELS: usize, const BLOCK_SIZE: usize> TransientDetector<N_CHANNELS, BLOCK_SIZE> {
+    impl<const N_CHANNELS: usize> TransientDetector<N_CHANNELS> {
         pub fn new(
             fast_attack: f32,
             fast_release: f32,
@@ -41,7 +41,7 @@ pub mod dsp {
                 trig: [None; N_CHANNELS],
             }
         }
-        pub fn calc_gain(n_frames: f32) -> f32 {
+        fn calc_gain(n_frames: f32) -> f32 {
             if n_frames == 0.0f32 {
                 0.0f32
             } else {
@@ -78,8 +78,7 @@ pub mod dsp {
 
             self.trig
         }
-
-        pub fn process_triggers(&mut self) {
+        fn process_triggers(&mut self) {
             (0..N_CHANNELS).for_each(|ch| {
                 if self.armed[ch] && self.max_diff[ch] > self.threshold_up {
                     self.trig[ch] = Some(true);
@@ -93,31 +92,14 @@ pub mod dsp {
             });
         }
     }
-    // let Detector {
-    //             attack_gain,
-    //             release_gain,
-    //             ref mut detect,
-    //             ref mut last_env_frame,
-    //         } = *self;
-    //
-    //         let detected_frame = detect.detect(frame);
-    //         let new_env_frame = last_env_frame.zip_map(detected_frame, |l, d| {
-    //             let gain = if l < d { attack_gain } else { release_gain };
-    //             let diff = l.add_amp(-d.to_signed_sample());
-    //             d.add_amp(diff.mul_amp(gain.to_sample()).to_sample())
-    //         });
-    //         *last_env_frame = new_env_frame;
-    //         new_env_frame
-    //
-    //     }
 }
 
 #[cfg(target_arch = "arm")]
 pub mod setup {
-    use embassy_stm32::Config;
-    use embassy_stm32::Peripherals;
     use embassy_stm32::pac::SPI1;
     use embassy_stm32::spi::Spi;
+    use embassy_stm32::Config;
+    use embassy_stm32::Peripherals;
     use p9813::P9813;
 
     pub fn clock_config(mut config: Config) -> Peripherals {

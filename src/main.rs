@@ -106,7 +106,7 @@ async fn peak_detector(
     let mut samples: [[SampleType; INPUT_CHANNELS]; BLOCK_SIZE];
     let mut triggers: [Option<bool>; INPUT_CHANNELS];
 
-    let mut td: TransientDetector<INPUT_CHANNELS, BLOCK_SIZE> = TransientDetector::new(
+    let mut td: TransientDetector<INPUT_CHANNELS> = TransientDetector::new(
         ms_to_frames(2.0),
         ms_to_frames(80.0),
         ms_to_frames(20.0),
@@ -348,7 +348,6 @@ async fn main(spawner: Spawner) {
         tim6.regs_basic()
             .cr2()
             .modify(|r| r.set_mms(vals::Mms::UPDATE));
-
         tim6
     };
 
@@ -364,13 +363,8 @@ async fn main(spawner: Spawner) {
     Timer::after_millis(200).await;
     pac::ADC2.cr().modify(|cr| cr.set_adstart(true));
     analog_clock.start();
-    // tim3.start();
     loop {
-        //info!("Hello, World!");
         ld1.set_high();
-        // let vref_int = adc2.blocking_read(&mut vrefint_channel) as f32 / u16::MAX as f32;
-        // let adc = adc2.blocking_read(&mut adc2_3) as f32 / u16::MAX as f32;
-        // info!("vref_int: {}, adc 2: {}", vref_int, adc);
         Timer::after(Duration::from_millis(500)).await;
         ld1.set_low();
         Timer::after(Duration::from_millis(500)).await;

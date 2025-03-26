@@ -16,13 +16,8 @@ bench = false
 
 [target.'cfg(target_arch = "arm")'.dependencies]
 control-surface = { path = "../control_surface/" }
-embassy-net = { version = "0.6", path = "../embassy/embassy-net/", features = [
-  "defmt",
-  "tcp",
-  "udp",
-  "dhcpv4",
-] }
-embassy-futures = { version = "0.1.1", path = "../embassy/embassy-futures/" }
+embassy-net = { version = "0.6", features = ["defmt", "tcp", "udp", "dhcpv4"] }
+embassy-futures = { version = "0.1.1" }
 embassy-stm32 = { version = "0.2.0", features = [
   "chrono",
   "exti",
@@ -31,29 +26,23 @@ embassy-stm32 = { version = "0.2.0", features = [
   "stm32h743zi",
   "unstable-pac",
   "time-driver-tim4",
-], path = "../embassy/embassy-stm32/" }
-embassy-sync = { version = "0.6.1", features = [
-  "defmt",
-], path = "../embassy/embassy-sync/" }
+] }
+embassy-sync = { version = "0.6.1", features = ["defmt"] }
 embassy-executor = { version = "0.7", features = [
   "arch-cortex-m",
   "executor-thread",
   "executor-interrupt",
   "defmt",
   "task-arena-size-32768",
-], path = "../embassy/embassy-executor/" }
+] }
 embassy-time = { version = "0.4.0", features = [
   "defmt-timestamp-uptime",
   "tick-hz-32_768",
-], path = "../embassy/embassy-time/" }
-embassy-usb = { features = [
-  "defmt",
-  "max-handler-count-6",
-], path = "../embassy/embassy-usb/" }
+] }
+embassy-usb = { version = "0.4.0", features = ["defmt", "max-handler-count-6"] }
 
 defmt-rtt = { version = "0.4" }
 defmt = { version = "0.3" }
-
 cortex-m = { version = "0.7.7", features = [
   "inline-asm",
   "critical-section-single-core",
@@ -78,13 +67,13 @@ idsp = "0.17.0"
 num-traits = { version = "0.2.19", default-features = false }
 p9813 = "0.2.0"
 
-# [patch.crates-io]
-# embassy-stm32 = { git = "https://github.com/embassy-rs/embassy", rev = "dd4f57677c68fbfd53208154d11def4dc4717de9" }
-# embassy-usb = { git = "https://github.com/embassy-rs/embassy", rev = "dd4f57677c68fbfd53208154d11def4dc4717de9" }
-# embassy-futures = { git = "https://github.com/embassy-rs/embassy", rev = "dd4f57677c68fbfd53208154d11def4dc4717de9" }
-# embassy-sync = { git = "https://github.com/embassy-rs/embassy", rev = "dd4f57677c68fbfd53208154d11def4dc4717de9" }
-# embassy-executor = { git = "https://github.com/embassy-rs/embassy", rev = "dd4f57677c68fbfd53208154d11def4dc4717de9" }
-# embassy-time = { git = "https://github.com/embassy-rs/embassy", rev = "dd4f57677c68fbfd53208154d11def4dc4717de9" }
+[patch.crates-io]
+embassy-stm32 = { git = "https://github.com/embassy-rs/embassy", rev = "dd4f57677c68fbfd53208154d11def4dc4717de9" }
+embassy-usb = { git = "https://github.com/embassy-rs/embassy", rev = "dd4f57677c68fbfd53208154d11def4dc4717de9" }
+embassy-futures = { git = "https://github.com/embassy-rs/embassy", rev = "dd4f57677c68fbfd53208154d11def4dc4717de9" }
+embassy-sync = { git = "https://github.com/embassy-rs/embassy", rev = "dd4f57677c68fbfd53208154d11def4dc4717de9" }
+embassy-executor = { git = "https://github.com/embassy-rs/embassy", rev = "dd4f57677c68fbfd53208154d11def4dc4717de9" }
+embassy-time = { git = "https://github.com/embassy-rs/embassy", rev = "dd4f57677c68fbfd53208154d11def4dc4717de9" }
 
 [profile.dev]
 codegen-units = 1
