@@ -375,9 +375,9 @@ dependencies = [
  "embedded-io-async",
  "heapless",
  "idsp",
- "microdsp",
  "micromath",
  "num-traits",
+ "p9813",
  "panic-probe",
  "static_cell",
 ]
@@ -819,26 +819,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0ca88d725a0a943b096803bd34e73a4437208b6077654cc4ecb2947a5f91618d"
 
 [[package]]
-name = "microdsp"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c7279b8107335d7ba2ce9a480fe54da1d51d432353f4a89da9303fb3d3a47dc6"
-dependencies = [
- "microfft",
- "micromath",
-]
-
-[[package]]
-name = "microfft"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b04ffc2e74da5513185343835177bfd4adf718986185c6d81c2ae2c6ebc07637"
-dependencies = [
- "num-complex",
- "static_assertions",
-]
-
-[[package]]
 name = "micromath"
 version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -884,6 +864,15 @@ name = "once_cell"
 version = "1.20.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "945462a4b81e43c4e3ba96bd7b49d834c6f61198356aa858733bc4acf3cbe62e"
+
+[[package]]
+name = "p9813"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f9ad18a429987d2cf5df76edd0d85bf669bd2b4169756c1e2d866f89b3dcdf8b"
+dependencies = [
+ "embedded-hal 0.2.7",
+]
 
 [[package]]
 name = "panic-probe"

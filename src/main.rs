@@ -19,6 +19,7 @@ use embassy_stm32::dma::{NoDma, ReadableRingBuffer, TransferOptions, WritableRin
 use embassy_stm32::pac;
 use embassy_stm32::pac::rtc::regs::Tr;
 use embassy_stm32::peripherals::{ADC2, TIM12};
+use embassy_stm32::spi::Spi;
 use embassy_stm32::time::Hertz;
 use embassy_stm32::timer::simple_pwm::{PwmPin, SimplePwm};
 use embassy_stm32::{
@@ -33,12 +34,8 @@ use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::zerocopy_channel::{Channel, Receiver, Sender};
 use embassy_time::{Duration, Instant, Timer, WithTimeout};
 
-use embedded_hal::digital::StatefulOutputPin;
-use embedded_io_async::{Read, Write};
-use heapless::Vec;
-use microdsp::sfnov::{HardKneeCompression, SpectralFluxNoveltyDetector};
+use p9813::P9813;
 use static_cell::StaticCell;
-type DetectorType = SpectralFluxNoveltyDetector<HardKneeCompression>;
 
 const SAMPLE_RATE: Hertz = Hertz(8_000);
 
@@ -56,37 +53,9 @@ type OutputFrame = [u16; OUTPUT_CHANNELS];
 type InputFrameChannel = Channel<'static, ThreadModeRawMutex, InputFrame>;
 type OutputFrameChannel = Channel<'static, ThreadModeRawMutex, OutputFrame>;
 
-#[derive(Clone, Copy)]
-struct Comparator<T> {
-    threshold: T,
-    is_armed: bool,
-}
 #[derive(Copy, Clone)]
 enum Event {
     AnalogTrigger(usize),
-}
-
-impl<T> Comparator<T>
-where
-    T: PartialOrd,
-{
-    fn new(threshold: T) -> Self {
-        Comparator {
-            threshold,
-            is_armed: true,
-        }
-    }
-
-    fn process(&mut self, input: T) -> Option<bool> {
-        if input > self.threshold && self.is_armed {
-            self.is_armed = false;
-            return Some(true);
-        } else if input < self.threshold {
-            self.is_armed = true;
-            return Some(false);
-        };
-        None
-    }
 }
 
 const fn ms_to_frames(ms: f32) -> f32 {
@@ -131,12 +100,6 @@ async fn peak_detector(
     mut ev: Sender<'static, ThreadModeRawMutex, Event>,
 ) {
     type SampleType = f32;
-    use dasp::Signal;
-    use dasp::envelope::Detector;
-    use dasp::envelope::detect::Peak;
-    use dasp::frame::N4;
-    use dasp::peak;
-    use dasp::rms::Rms;
     use light_controller::dsp::TransientDetector;
 
     let mut input_buffer: [u16; INPUT_CHANNELS * BLOCK_SIZE] = [0; INPUT_CHANNELS * BLOCK_SIZE];
@@ -149,6 +112,7 @@ async fn peak_detector(
         ms_to_frames(20.0),
         ms_to_frames(80.0),
         0.02,
+        0.01,
     );
 
     rb_in.clear();
@@ -256,40 +220,11 @@ mod process {
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
-    let mut config = Config::default();
-    {
-        use embassy_stm32::rcc::*;
-        //config.rcc.hsi = Some(HSIPrescaler::DIV2);
-        config.rcc.pll1 = Some(Pll {
-            source: PllSource::HSI,
-            prediv: PllPreDiv::DIV4,
-            mul: PllMul::MUL50,
-            divp: Some(PllDiv::DIV2),
-            divq: None,
-            divr: None,
-        });
-        config.rcc.pll2 = Some(Pll {
-            source: PllSource::HSI,
-            prediv: PllPreDiv::DIV4,
-            mul: PllMul::MUL50,
-            divp: Some(PllDiv::DIV8), // 100mhz
-            divq: None,
-            divr: None,
-        });
-        config.rcc.sys = Sysclk::PLL1_P;
-        config.rcc.ahb_pre = AHBPrescaler::DIV2; // 200 Mhz
-        config.rcc.apb1_pre = APBPrescaler::DIV4; // 100 Mhz
-        config.rcc.apb2_pre = APBPrescaler::DIV4; // 100 Mhz
-        config.rcc.apb3_pre = APBPrescaler::DIV4; // 100 Mhz
-        config.rcc.apb4_pre = APBPrescaler::DIV4; // 100 Mhz
-        config.rcc.voltage_scale = VoltageScale::Scale1;
-        config.rcc.mux.adcsel = mux::Adcsel::PLL2_P;
-    }
-
-    let p = embassy_stm32::init(config);
+    let config = Config::default();
+    let p = light_controller::setup::clock_config(config);
 
     let mut ld1 = Output::new(p.PB0, Level::High, Speed::Low);
-    let mut ld2 = Output::new(p.PE1, Level::High, Speed::Low);
+    let ld2 = Output::new(p.PE1, Level::High, Speed::Low);
     //let mut ld3 = Output::new(p.PB14, Level::High, Speed::Low);
     let ld3 = PwmPin::new_ch1(p.PB14, embassy_stm32::gpio::OutputType::PushPull);
 
@@ -303,6 +238,13 @@ async fn main(spawner: Spawner) {
         embassy_stm32::timer::low_level::CountingMode::EdgeAlignedUp,
     );
 
+    let p9813: P9813<Spi<'static, embassy_stm32::mode::Blocking>> = {
+        use embassy_stm32::spi::Config;
+        let sck = p.PG11;
+        let mosi = p.PD7;
+        let spi = Spi::new_blocking_txonly(p.SPI1, sck, mosi, Config::default());
+        P9813::new(spi)
+    };
     let mut dac = {
         let dac1_1 = p.PA4;
         let dac1_2 = p.PA5;
@@ -397,18 +339,6 @@ async fn main(spawner: Spawner) {
             TransferOptions::default(),
         )
     };
-    // let tim3 = {
-    //     use embassy_stm32::timer::low_level::Timer;
-    //     use pac::timer::*;
-    //
-    //     let tim3 = Timer::new(p.TIM3);
-    //     tim3.set_frequency(Hertz(2));
-    //     tim3.regs_gp16()
-    //         .cr2()
-    //         .modify(|r| r.set_mms(vals::Mms::UPDATE));
-    //
-    //     tim3
-    // };
     let analog_clock = {
         use embassy_stm32::timer::low_level::Timer;
         use pac::timer::*;
@@ -422,23 +352,6 @@ async fn main(spawner: Spawner) {
         tim6
     };
 
-    // static INPUT_BUFFER: StaticCell<[InputFrame; BLOCK_SIZE]> = StaticCell::new();
-    // let input_buffer = INPUT_BUFFER.init([InputFrame::default(); BLOCK_SIZE]);
-    // static INPUT_CHANNEL: StaticCell<InputFrameChannel> = StaticCell::new();
-    // let input_channel = INPUT_CHANNEL.init_with(|| InputFrameChannel::new(input_buffer));
-    // let (input_sender, input_receiver) = input_channel.split();
-    //
-    // static OUTPUT_BUFFER: StaticCell<[OutputFrame; BLOCK_SIZE]> = StaticCell::new();
-    // let output_buffer = OUTPUT_BUFFER.init([OutputFrame::default(); BLOCK_SIZE]);
-    // static OUTPUT_CHANNEL: StaticCell<OutputFrameChannel> = StaticCell::new();
-    // let output_channel = OUTPUT_CHANNEL.init_with(|| OutputFrameChannel::new(output_buffer));
-    // let (output_sender, output_receiver) = output_channel.split();
-
-    // defmt::unwrap!(spawner.spawn(read_adc(adc2_dma, input_sender)));
-    // defmt::unwrap!(spawner.spawn(audio_process(input_receiver, output_sender)));
-    // defmt::unwrap!(spawner.spawn(write_dac(dac1_dma, output_receiver)));
-    //
-    //
     static EVENT_BUFFER: StaticCell<[Event; BLOCK_SIZE]> = StaticCell::new();
     let event_buffer = EVENT_BUFFER.init([Event::AnalogTrigger(0); BLOCK_SIZE]);
     static EVENT_CHANNEL: StaticCell<Channel<ThreadModeRawMutex, Event>> = StaticCell::new();

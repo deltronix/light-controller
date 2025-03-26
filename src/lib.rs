@@ -1,7 +1,7 @@
 #![no_std]
 
 pub mod dsp {
-    use dasp::ring_buffer::Fixed;
+    use num_traits::float::Float;
     pub struct TransientDetector<const N_CHANNELS: usize, const BLOCK_SIZE: usize> {
         fast_attack: f32,
         fast_release: f32,
@@ -49,30 +49,37 @@ pub mod dsp {
             }
         }
 
-        pub fn process_block(&mut self, block: &[[f32; N_CHANNELS]]) -> [Option<bool>; N_CHANNELS] {
-            self.max_diff = [0.0; N_CHANNELS];
-            self.trig = [None; N_CHANNELS];
-            for frame in block {
-                (0..N_CHANNELS).for_each(|ch| {
-                    let rectified = frame[ch].abs();
-                    let fast_diff = self.last_fast_frame[ch] - rectified;
-                    let slow_diff = self.last_slow_frame[ch] - rectified;
-                    if self.last_fast_frame[ch] < rectified {
-                        self.last_fast_frame[ch] = rectified + (fast_diff * self.fast_attack)
-                    } else {
-                        self.last_fast_frame[ch] = rectified + (fast_diff * self.fast_release)
-                    }
-                    if self.last_slow_frame[ch] < rectified {
-                        self.last_slow_frame[ch] = rectified + (slow_diff * self.slow_attack)
-                    } else {
-                        self.last_slow_frame[ch] = rectified + (slow_diff * self.slow_release)
-                    }
+        pub fn process(&mut self, frame: &[f32; N_CHANNELS]) -> [Option<bool>; N_CHANNELS] {
+            (0..N_CHANNELS).for_each(|ch| {
+                let rectified = frame[ch].abs();
+                let fast_diff = self.last_fast_frame[ch] - rectified;
+                let slow_diff = self.last_slow_frame[ch] - rectified;
+                if self.last_fast_frame[ch] < rectified {
+                    self.last_fast_frame[ch] = rectified + (fast_diff * self.fast_attack)
+                } else {
+                    self.last_fast_frame[ch] = rectified + (fast_diff * self.fast_release)
+                }
+                if self.last_slow_frame[ch] < rectified {
+                    self.last_slow_frame[ch] = rectified + (slow_diff * self.slow_attack)
+                } else {
+                    self.last_slow_frame[ch] = rectified + (slow_diff * self.slow_release)
+                }
 
-                    let env_diff = self.last_fast_frame[ch] - self.last_slow_frame[ch];
-                    //self.max_diff[ch] = (self.max_diff[ch] + env_diff) * 0.5;
-                    self.max_diff[ch] = env_diff;
-                });
+                let env_diff = self.last_fast_frame[ch] - self.last_slow_frame[ch];
+                self.max_diff[ch] = env_diff;
+                self.process_triggers();
+            });
+            self.trig
+        }
+        pub fn process_block(&mut self, block: &[[f32; N_CHANNELS]]) -> [Option<bool>; N_CHANNELS] {
+            for frame in block {
+                self.process(frame);
             }
+
+            self.trig
+        }
+
+        pub fn process_triggers(&mut self) {
             (0..N_CHANNELS).for_each(|ch| {
                 if self.armed[ch] && self.max_diff[ch] > self.threshold_up {
                     self.trig[ch] = Some(true);
@@ -84,8 +91,6 @@ pub mod dsp {
                     self.trig[ch] = None;
                 }
             });
-
-            self.trig
         }
     }
     // let Detector {
@@ -108,11 +113,14 @@ pub mod dsp {
 }
 
 #[cfg(target_arch = "arm")]
-mod setup {
+pub mod setup {
     use embassy_stm32::Config;
     use embassy_stm32::Peripherals;
+    use embassy_stm32::pac::SPI1;
+    use embassy_stm32::spi::Spi;
+    use p9813::P9813;
 
-    fn clock_config(mut config: Config) -> Peripherals {
+    pub fn clock_config(mut config: Config) -> Peripherals {
         use embassy_stm32::rcc::*;
         //let mut config = Config::default();
 
