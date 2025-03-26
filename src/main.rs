@@ -5,19 +5,14 @@
 
 use {defmt_rtt as _, panic_probe as _};
 
-use dasp::envelope::Detect;
-use dasp::sample::SignedSample;
-use dasp::slice::{ToFrameSlice, from_sample_slice};
-use dasp::{Frame, Sample, Signal, sample};
-use defmt::{debug, error, info, todo};
+use dasp::{Frame, Sample, Signal};
+use defmt::debug;
 use embassy_executor::Spawner;
-use embassy_futures::select::select;
 
 use embassy_stm32::Config;
 use embassy_stm32::adc::SampleTime;
 use embassy_stm32::dma::{NoDma, ReadableRingBuffer, TransferOptions, WritableRingBuffer};
 use embassy_stm32::pac;
-use embassy_stm32::pac::rtc::regs::Tr;
 use embassy_stm32::peripherals::{ADC2, TIM12};
 use embassy_stm32::spi::Spi;
 use embassy_stm32::time::Hertz;
@@ -32,7 +27,7 @@ static ALLOCATOR: emballoc::Allocator<2048> = emballoc::Allocator::new();
 
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::zerocopy_channel::{Channel, Receiver, Sender};
-use embassy_time::{Duration, Instant, Timer, WithTimeout};
+use embassy_time::{Duration, Instant, Timer};
 
 use p9813::P9813;
 use static_cell::StaticCell;
@@ -96,7 +91,7 @@ async fn led_controller(
 #[embassy_executor::task]
 async fn peak_detector(
     mut rb_in: ReadableRingBuffer<'static, u16>,
-    mut ld: Output<'static>,
+    ld: Output<'static>,
     mut ev: Sender<'static, ThreadModeRawMutex, Event>,
 ) {
     type SampleType = f32;
@@ -210,7 +205,7 @@ async fn write_dac(
 
 mod process {
     use super::*;
-    use dasp::{Signal, sample::ToSample};
+    use dasp::Signal;
     fn process(
         input: &impl Signal<Frame = [f32; INPUT_CHANNELS]>,
         outpu: &mut dyn Signal<Frame = [f32; OUTPUT_CHANNELS]>,
@@ -245,7 +240,7 @@ async fn main(spawner: Spawner) {
         let spi = Spi::new_blocking_txonly(p.SPI1, sck, mosi, Config::default());
         P9813::new(spi)
     };
-    let mut dac = {
+    let dac = {
         let dac1_1 = p.PA4;
         let dac1_2 = p.PA5;
 

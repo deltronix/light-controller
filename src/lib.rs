@@ -96,11 +96,9 @@ pub mod dsp {
 
 #[cfg(target_arch = "arm")]
 pub mod setup {
-    use embassy_stm32::pac::SPI1;
-    use embassy_stm32::spi::Spi;
+
     use embassy_stm32::Config;
     use embassy_stm32::Peripherals;
-    use p9813::P9813;
 
     pub fn clock_config(mut config: Config) -> Peripherals {
         use embassy_stm32::rcc::*;

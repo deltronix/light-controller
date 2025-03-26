@@ -353,36 +353,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dmng_light_controller"
-version = "0.1.0"
-dependencies = [
- "control-surface",
- "cortex-m",
- "cortex-m-rt",
- "critical-section",
- "dasp",
- "defmt",
- "defmt-rtt",
- "emballoc",
- "embassy-executor",
- "embassy-futures",
- "embassy-net",
- "embassy-stm32",
- "embassy-sync",
- "embassy-time",
- "embassy-usb",
- "embedded-hal 1.0.0",
- "embedded-io-async",
- "heapless",
- "idsp",
- "micromath",
- "num-traits",
- "p9813",
- "panic-probe",
- "static_cell",
-]
-
-[[package]]
 name = "document-features"
 version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1103,6 +1073,36 @@ checksum = "dc520f60f6653a32479a95b9180b33908f0cbbdf106609465ee7dea98f4f5b37"
 dependencies = [
  "cortex-m",
  "cortex-m-rt",
+]
+
+[[package]]
+name = "stm32_light_controller"
+version = "0.1.0"
+dependencies = [
+ "control-surface",
+ "cortex-m",
+ "cortex-m-rt",
+ "critical-section",
+ "dasp",
+ "defmt",
+ "defmt-rtt",
+ "emballoc",
+ "embassy-executor",
+ "embassy-futures",
+ "embassy-net",
+ "embassy-stm32",
+ "embassy-sync",
+ "embassy-time",
+ "embassy-usb",
+ "embedded-hal 1.0.0",
+ "embedded-io-async",
+ "heapless",
+ "idsp",
+ "micromath",
+ "num-traits",
+ "p9813",
+ "panic-probe",
+ "static_cell",
 ]
 
 [[package]]

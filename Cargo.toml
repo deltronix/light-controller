@@ -1,10 +1,10 @@
 [package]
-name = "dmng_light_controller"
+name = "stm32_light_controller"
 version = "0.1.0"
 edition = "2024"
 
 [[bin]]
-name = "dmng_light_controller"
+name = "stm32_light_controller"
 test = false
 bench = false
 
