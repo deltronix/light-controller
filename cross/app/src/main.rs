@@ -5,18 +5,20 @@
 
 use {defmt_rtt as _, panic_probe as _};
 
+use board::{Board, StatusLeds};
 use dasp::{Frame, Sample, Signal};
 use defmt::debug;
 use embassy_executor::Spawner;
 
-use embassy_stm32::Config;
 use embassy_stm32::adc::SampleTime;
 use embassy_stm32::dma::{NoDma, ReadableRingBuffer, TransferOptions, WritableRingBuffer};
-use embassy_stm32::pac;
-use embassy_stm32::peripherals::{ADC2, TIM12};
+use embassy_stm32::gpio::OutputType;
+use embassy_stm32::peripherals::{ADC2, DMA1_CH0, DMA1_CH1, TIM12};
 use embassy_stm32::spi::Spi;
 use embassy_stm32::time::Hertz;
 use embassy_stm32::timer::simple_pwm::{PwmPin, SimplePwm};
+use embassy_stm32::{Config, peripherals};
+use embassy_stm32::{Peripherals, pac};
 use embassy_stm32::{
     adc::{Adc, AdcChannel, AnyAdcChannel},
     gpio::{Level, Output, Speed},
@@ -25,7 +27,7 @@ use embassy_stm32::{
 #[global_allocator]
 static ALLOCATOR: emballoc::Allocator<2048> = emballoc::Allocator::new();
 
-use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
+use embassy_sync::blocking_mutex::raw::{NoopRawMutex, ThreadModeRawMutex};
 use embassy_sync::zerocopy_channel::{Channel, Receiver, Sender};
 use embassy_time::{Duration, Instant, Timer};
 
@@ -45,8 +47,8 @@ type AdcDmaBuffer = [u16; INPUT_CHANNELS * DMA_BUFFER_SIZE];
 type DacDmaBuffer = [u32; DMA_BUFFER_SIZE];
 type InputFrame = [u16; INPUT_CHANNELS];
 type OutputFrame = [u16; OUTPUT_CHANNELS];
-type InputFrameChannel = Channel<'static, ThreadModeRawMutex, InputFrame>;
-type OutputFrameChannel = Channel<'static, ThreadModeRawMutex, OutputFrame>;
+type InputFrameChannel = Channel<'static, NoopRawMutex, InputFrame>;
+type OutputFrameChannel = Channel<'static, NoopRawMutex, OutputFrame>;
 
 #[derive(Copy, Clone)]
 enum Event {
@@ -60,7 +62,7 @@ const fn ms_to_frames(ms: f32) -> f32 {
 
 #[embassy_executor::task]
 async fn led_controller(
-    mut ev: Receiver<'static, ThreadModeRawMutex, Event>,
+    mut ev: Receiver<'static, NoopRawMutex, Event>,
     mut pwm: SimplePwm<'static, TIM12>,
 ) {
     let mut intensity: u16 = 0;
@@ -92,16 +94,15 @@ async fn led_controller(
 async fn peak_detector(
     mut rb_in: ReadableRingBuffer<'static, u16>,
     ld: Output<'static>,
-    mut ev: Sender<'static, ThreadModeRawMutex, Event>,
+    mut ev: Sender<'static, NoopRawMutex, Event>,
 ) {
     type SampleType = f32;
-    use light_controller::dsp::TransientDetector;
+    use lib::dsp::TransientDetector;
 
     let mut input_buffer: [u16; INPUT_CHANNELS * BLOCK_SIZE] = [0; INPUT_CHANNELS * BLOCK_SIZE];
     let mut samples: [[SampleType; INPUT_CHANNELS]; BLOCK_SIZE];
     let mut triggers: [Option<bool>; INPUT_CHANNELS];
-
-    let mut td: TransientDetector<INPUT_CHANNELS> = TransientDetector::new(
+    let mut transient_detector: TransientDetector<INPUT_CHANNELS> = TransientDetector::new(
         ms_to_frames(2.0),
         ms_to_frames(80.0),
         ms_to_frames(20.0),
@@ -128,7 +129,7 @@ async fn peak_detector(
         };
 
         samples = frames.map(|f| f.to_float_frame());
-        triggers = td.process_block(&samples);
+        triggers = transient_detector.process_block(&samples);
         triggers.iter().enumerate().for_each(|(ch, t)| {
             if t.is_some_and(|t| t) {
                 if let Some(event) = ev.try_send() {
@@ -137,7 +138,7 @@ async fn peak_detector(
                 }
             }
         });
-        debug!("max diff: {}", td.max_diff[1]);
+        debug!("max diff: {}", transient_detector.max_diff[1]);
         // debug!(
         //     "processing time: {}us",
         //     (Instant::now() - start).as_micros()
@@ -174,7 +175,7 @@ async fn signal_generator(mut rb_out: WritableRingBuffer<'static, u32>) {
 #[embassy_executor::task]
 async fn read_adc(
     mut dma: ReadableRingBuffer<'static, u16>,
-    mut send: Sender<'static, ThreadModeRawMutex, InputFrame>,
+    mut send: Sender<'static, NoopRawMutex, InputFrame>,
 ) {
     dma.start();
     loop {
@@ -186,7 +187,7 @@ async fn read_adc(
 #[embassy_executor::task]
 async fn write_dac(
     mut dma: WritableRingBuffer<'static, u32>,
-    mut recv: Receiver<'static, ThreadModeRawMutex, OutputFrame>,
+    mut recv: Receiver<'static, NoopRawMutex, OutputFrame>,
 ) {
     dma.start();
     loop {
@@ -203,44 +204,28 @@ async fn write_dac(
     }
 }
 
-mod process {
-    use super::*;
-    use dasp::Signal;
-    fn process(
-        input: &impl Signal<Frame = [f32; INPUT_CHANNELS]>,
-        outpu: &mut dyn Signal<Frame = [f32; OUTPUT_CHANNELS]>,
-    ) {
-    }
-}
-
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
     let config = Config::default();
-    let p = light_controller::setup::clock_config(config);
+
+    let p = board::clocks::config(config);
 
     let mut ld1 = Output::new(p.PB0, Level::High, Speed::Low);
     let ld2 = Output::new(p.PE1, Level::High, Speed::Low);
     //let mut ld3 = Output::new(p.PB14, Level::High, Speed::Low);
-    let ld3 = PwmPin::new_ch1(p.PB14, embassy_stm32::gpio::OutputType::PushPull);
-
-    let pwm = SimplePwm::new(
-        p.TIM12,
-        Some(ld3),
-        None,
-        None,
-        None,
-        Hertz(1000),
-        embassy_stm32::timer::low_level::CountingMode::EdgeAlignedUp,
-    );
-
-    let p9813: P9813<Spi<'static, embassy_stm32::mode::Blocking>> = {
-        use embassy_stm32::spi::Config;
-        let sck = p.PG11;
-        let mosi = p.PD7;
-        let spi = Spi::new_blocking_txonly(p.SPI1, sck, mosi, Config::default());
-        P9813::new(spi)
+    let ld3 = {
+        let pin = PwmPin::new_ch1(p.PB14, OutputType::PushPull);
+        SimplePwm::new(
+            p.TIM12,
+            Some(pin),
+            None,
+            None,
+            None,
+            Hertz(1000),
+            embassy_stm32::timer::low_level::CountingMode::EdgeAlignedUp,
+        )
     };
-    let dac = {
+    let dac1 = {
         let dac1_1 = p.PA4;
         let dac1_2 = p.PA5;
 
@@ -262,77 +247,55 @@ async fn main(spawner: Spawner) {
 
         dac
     };
+    let adc2 = {
+        let _adc2_2: AnyAdcChannel<ADC2> = p.PF13.degrade_adc();
+        let _adc2_3: AnyAdcChannel<ADC2> = p.PA6.degrade_adc();
+        let _adc2_4: AnyAdcChannel<ADC2> = p.PC4.degrade_adc();
+        let _adc2_5: AnyAdcChannel<ADC2> = p.PB1.degrade_adc();
+        let _adc2_6: AnyAdcChannel<ADC2> = p.PF14.degrade_adc();
+        let _adc2_7: AnyAdcChannel<ADC2> = p.PA7.degrade_adc();
+        let _adc2_8: AnyAdcChannel<ADC2> = p.PC5.degrade_adc();
+        let _adc2_11: AnyAdcChannel<ADC2> = p.PC1.degrade_adc();
 
-    static DAC1_DMA_BUFFER: StaticCell<DacDmaBuffer> = StaticCell::new();
-    let dac1_dma_buf = DAC1_DMA_BUFFER.init_with(|| DacDmaBuffer::from([0; DMA_BUFFER_SIZE]));
+        let mut adc = Adc::new(p.ADC2);
+        adc.set_sample_time(SampleTime::CYCLES8_5);
+        adc.set_resolution(embassy_stm32::adc::Resolution::BITS16);
 
-    let dac1_dma = unsafe {
-        WritableRingBuffer::new(
-            p.DMA1_CH1,
-            67,
-            pac::DAC1.dhr12ld().as_ptr() as *mut u32,
-            dac1_dma_buf,
-            TransferOptions::default(),
-        )
-    };
+        {
+            use pac::adc::vals::*;
 
-    let _adc2_2: AnyAdcChannel<ADC2> = p.PF13.degrade_adc();
-    let _adc2_3: AnyAdcChannel<ADC2> = p.PA6.degrade_adc();
-    let _adc2_4: AnyAdcChannel<ADC2> = p.PC4.degrade_adc();
-    let _adc2_5: AnyAdcChannel<ADC2> = p.PB1.degrade_adc();
-    let _adc2_6: AnyAdcChannel<ADC2> = p.PF14.degrade_adc();
-    let _adc2_7: AnyAdcChannel<ADC2> = p.PA7.degrade_adc();
-    let _adc2_8: AnyAdcChannel<ADC2> = p.PC5.degrade_adc();
-    let _adc2_11: AnyAdcChannel<ADC2> = p.PC1.degrade_adc();
+            pac::ADC2.pcsel().modify(|r| {
+                r.set_pcsel(2, Pcsel::PRESELECTED);
+                r.set_pcsel(3, Pcsel::PRESELECTED);
+                r.set_pcsel(4, Pcsel::PRESELECTED);
+                r.set_pcsel(5, Pcsel::PRESELECTED);
+                r.set_pcsel(6, Pcsel::PRESELECTED);
+                r.set_pcsel(7, Pcsel::PRESELECTED);
+                r.set_pcsel(8, Pcsel::PRESELECTED);
+                r.set_pcsel(11, Pcsel::PRESELECTED);
+            });
+            pac::ADC2.sqr1().modify(|sqr1| {
+                sqr1.set_l((INPUT_CHANNELS - 1) as u8);
+                sqr1.set_sq(0, 2);
+                sqr1.set_sq(1, 3);
+                sqr1.set_sq(2, 4);
+                sqr1.set_sq(3, 5);
+            });
+            pac::ADC2.sqr2().modify(|sqr2| {
+                sqr2.set_sq(0, 6);
+                sqr2.set_sq(1, 7);
+                sqr2.set_sq(2, 8);
+                sqr2.set_sq(3, 11);
+            });
 
-    let mut adc2 = Adc::new(p.ADC2);
-    adc2.set_sample_time(SampleTime::CYCLES8_5);
-    adc2.set_resolution(embassy_stm32::adc::Resolution::BITS16);
+            pac::ADC2.cfgr().modify(|r| {
+                r.set_dmngt(Dmngt::DMA_CIRCULAR);
+                r.set_exten(Exten::RISING_EDGE);
+                r.set_extsel(0b01101); // tim6_trgo
+            });
+        }
 
-    {
-        use pac::adc::vals::*;
-        pac::ADC2.pcsel().modify(|r| {
-            r.set_pcsel(2, Pcsel::PRESELECTED);
-            r.set_pcsel(3, Pcsel::PRESELECTED);
-            r.set_pcsel(4, Pcsel::PRESELECTED);
-            r.set_pcsel(5, Pcsel::PRESELECTED);
-            r.set_pcsel(6, Pcsel::PRESELECTED);
-            r.set_pcsel(7, Pcsel::PRESELECTED);
-            r.set_pcsel(8, Pcsel::PRESELECTED);
-            r.set_pcsel(11, Pcsel::PRESELECTED);
-        });
-        pac::ADC2.sqr1().modify(|sqr1| {
-            sqr1.set_l((INPUT_CHANNELS - 1) as u8);
-            sqr1.set_sq(0, 2);
-            sqr1.set_sq(1, 3);
-            sqr1.set_sq(2, 4);
-            sqr1.set_sq(3, 5);
-        });
-        pac::ADC2.sqr2().modify(|sqr2| {
-            sqr2.set_sq(0, 6);
-            sqr2.set_sq(1, 7);
-            sqr2.set_sq(2, 8);
-            sqr2.set_sq(3, 11);
-        });
-
-        pac::ADC2.cfgr().modify(|r| {
-            r.set_dmngt(Dmngt::DMA_CIRCULAR);
-            r.set_exten(Exten::RISING_EDGE);
-            r.set_extsel(0b01101); // tim6_trgo
-        });
-    }
-    static ADC_DMA_BUFFER: StaticCell<AdcDmaBuffer> = StaticCell::new();
-    let adc_dma_buf = ADC_DMA_BUFFER.init_with(|| {
-        AdcDmaBuffer::from([<u16 as dasp::Sample>::EQUILIBRIUM; INPUT_CHANNELS * DMA_BUFFER_SIZE])
-    });
-    let adc2_dma = unsafe {
-        ReadableRingBuffer::new(
-            p.DMA1_CH0,
-            ADC2_DMA_REQ,
-            pac::ADC2.dr().as_ptr() as *mut u16,
-            adc_dma_buf,
-            TransferOptions::default(),
-        )
+        adc
     };
     let analog_clock = {
         use embassy_stm32::timer::low_level::Timer;
@@ -345,15 +308,48 @@ async fn main(spawner: Spawner) {
             .modify(|r| r.set_mms(vals::Mms::UPDATE));
         tim6
     };
+    let p9813: P9813<Spi<'static, embassy_stm32::mode::Blocking>> = {
+        use embassy_stm32::spi::Config;
+        let sck = p.PG11;
+        let mosi = p.PD7;
+        let spi = Spi::new_blocking_txonly(p.SPI1, sck, mosi, Config::default());
+        P9813::new(spi)
+    };
 
+    static DAC1_DMA_BUFFER: StaticCell<DacDmaBuffer> = StaticCell::new();
+    let dac1_dma_buf = DAC1_DMA_BUFFER.init_with(|| DacDmaBuffer::from([0; DMA_BUFFER_SIZE]));
+
+    let dac_dma = unsafe {
+        WritableRingBuffer::new(
+            Peripherals::steal().DMA1_CH0,
+            67,
+            pac::DAC1.dhr12ld().as_ptr() as *mut u32,
+            dac1_dma_buf,
+            TransferOptions::default(),
+        )
+    };
+
+    static ADC_DMA_BUFFER: StaticCell<AdcDmaBuffer> = StaticCell::new();
+    let adc_dma_buf =
+        ADC_DMA_BUFFER.init_with(|| AdcDmaBuffer::from([0u16; INPUT_CHANNELS * DMA_BUFFER_SIZE]));
+    let adc_dma = unsafe {
+        ReadableRingBuffer::new(
+            Peripherals::steal().DMA1_CH1,
+            ADC2_DMA_REQ,
+            pac::ADC2.dr().as_ptr() as *mut u16,
+            adc_dma_buf,
+            TransferOptions::default(),
+        )
+    };
     static EVENT_BUFFER: StaticCell<[Event; BLOCK_SIZE]> = StaticCell::new();
     let event_buffer = EVENT_BUFFER.init([Event::AnalogTrigger(0); BLOCK_SIZE]);
-    static EVENT_CHANNEL: StaticCell<Channel<ThreadModeRawMutex, Event>> = StaticCell::new();
+    static EVENT_CHANNEL: StaticCell<Channel<NoopRawMutex, Event>> = StaticCell::new();
     let event_channel = EVENT_CHANNEL.init_with(|| Channel::new(event_buffer));
     let (event_sender, event_receiver) = event_channel.split();
-    defmt::unwrap!(spawner.spawn(peak_detector(adc2_dma, ld2, event_sender)));
-    defmt::unwrap!(spawner.spawn(signal_generator(dac1_dma)));
-    defmt::unwrap!(spawner.spawn(led_controller(event_receiver, pwm)));
+
+    defmt::unwrap!(spawner.spawn(peak_detector(adc_dma, ld2, event_sender)));
+    defmt::unwrap!(spawner.spawn(signal_generator(dac_dma)));
+    defmt::unwrap!(spawner.spawn(led_controller(event_receiver, ld3)));
 
     Timer::after_millis(200).await;
     pac::ADC2.cr().modify(|cr| cr.set_adstart(true));

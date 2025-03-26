@@ -1,0 +1,26 @@
+[package]
+name = "board"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# Embassy
+embassy-stm32 = { workspace = true }
+embassy-sync = { workspace = true }
+
+# DEFMT
+defmt-rtt = { workspace = true }
+defmt = { workspace = true }
+
+# CORTEX-M
+cortex-m = { version = "0.7.7", features = [
+  "inline-asm",
+  "critical-section-single-core",
+] }
+cortex-m-rt = "0.7"
+
+# OTHERS
+static_cell = { workspace = true }
+p9813 = { workspace = true }
+
+embedded-hal-async = { version = "1" }
