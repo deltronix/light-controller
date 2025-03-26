@@ -205,23 +205,11 @@ async fn main(spawner: Spawner) {
     let Board {
         status_leds: StatusLeds { mut ld1, ld2, ld3 },
         dac1,
+        dac1_dma,
         adc2,
         analog_clock,
         p9813,
     } = board::Board::init(p);
-
-    static DAC1_DMA_BUFFER: StaticCell<DacDmaBuffer> = StaticCell::new();
-    let dac1_dma_buf = DAC1_DMA_BUFFER.init_with(|| DacDmaBuffer::from([0; DMA_BUFFER_SIZE]));
-
-    let dac_dma = unsafe {
-        WritableRingBuffer::new(
-            Peripherals::steal().DMA1_CH0,
-            67,
-            pac::DAC1.dhr12ld().as_ptr() as *mut u32,
-            dac1_dma_buf,
-            TransferOptions::default(),
-        )
-    };
 
     static ADC_DMA_BUFFER: StaticCell<AdcDmaBuffer> = StaticCell::new();
     let adc_dma_buf =
@@ -242,7 +230,7 @@ async fn main(spawner: Spawner) {
     let (event_sender, event_receiver) = event_channel.split();
 
     defmt::unwrap!(spawner.spawn(peak_detector(adc_dma, ld2, event_sender)));
-    defmt::unwrap!(spawner.spawn(signal_generator(dac_dma)));
+    defmt::unwrap!(spawner.spawn(signal_generator(dac1_dma)));
     defmt::unwrap!(spawner.spawn(led_controller(event_receiver, ld3)));
 
     Timer::after_millis(200).await;

@@ -1,6 +1,12 @@
 #![no_std]
 pub mod dsp {
     use num_traits::Float;
+    pub struct EnvelopeDetector<const N_CHANNELS: usize> {
+        attack: f32,
+        release: f32,
+        last_frame: [f32; N_CHANNELS],
+    }
+
     pub struct TransientDetector<const N_CHANNELS: usize> {
         fast_attack: f32,
         fast_release: f32,

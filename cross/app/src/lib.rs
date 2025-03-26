@@ -1,6 +1,7 @@
 #![no_std]
 
 use embassy_stm32::dac::Dac;
+use embassy_stm32::dma::{TransferOptions, WritableRingBuffer};
 use embassy_stm32::mode::Blocking;
 use embassy_stm32::peripherals::TIM12;
 use embassy_stm32::timer::low_level::Timer;
@@ -16,6 +17,7 @@ use embassy_stm32::{
     timer::simple_pwm::{PwmPin, SimplePwm},
 };
 use p9813::P9813;
+use static_cell::StaticCell;
 const SAMPLE_RATE: Hertz = Hertz(8_000);
 
 const ADC2_DMA_REQ: u8 = 10;
@@ -37,6 +39,7 @@ pub struct StatusLeds {
 pub struct Board {
     pub status_leds: StatusLeds,
     pub dac1: Dac<'static, DAC1>,
+    pub dac1_dma: WritableRingBuffer<'static, u32>,
     pub adc2: Adc<'static, ADC2>,
     pub analog_clock: Timer<'static, TIM6>,
     pub p9813: P9813<Spi<'static, Blocking>>,
@@ -83,6 +86,18 @@ impl Board {
             dac.ch2().enable();
 
             dac
+        };
+        static DAC1_DMA_BUFFER: StaticCell<DacDmaBuffer> = StaticCell::new();
+        let dac1_dma_buf = DAC1_DMA_BUFFER.init_with(|| DacDmaBuffer::from([0; DMA_BUFFER_SIZE]));
+
+        let dac1_dma = unsafe {
+            WritableRingBuffer::new(
+                p.DMA1_CH0,
+                67,
+                pac::DAC1.dhr12ld().as_ptr() as *mut u32,
+                dac1_dma_buf,
+                TransferOptions::default(),
+            )
         };
         let adc2 = {
             let _adc2_2: AnyAdcChannel<ADC2> = p.PF13.degrade_adc();
@@ -156,6 +171,7 @@ impl Board {
         Board {
             status_leds,
             dac1,
+            dac1_dma,
             adc2,
             analog_clock,
             p9813,
@@ -177,7 +193,7 @@ pub mod clocks {
             prediv: PllPreDiv::DIV4,  // 16 MHz
             mul: PllMul::MUL50,       // 800 MHz
             divp: Some(PllDiv::DIV2), // 400 MHz
-            divq: None,
+            divq: Some(PllDiv::DIV4), // 200 MHz
             divr: None,
         });
         config.rcc.pll2 = Some(Pll {
