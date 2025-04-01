@@ -1,4 +1,5 @@
 #![no_std]
+
 pub mod dsp {
     use num_traits::Float;
     pub struct EnvelopeDetector<const N_CHANNELS: usize> {
@@ -72,15 +73,14 @@ pub mod dsp {
 
                 let env_diff = self.last_fast_frame[ch] - self.last_slow_frame[ch];
                 self.max_diff[ch] = env_diff;
-                self.process_triggers();
             });
+            self.process_triggers();
             self.trig
         }
         pub fn process_block(&mut self, block: &[[f32; N_CHANNELS]]) -> [Option<bool>; N_CHANNELS] {
             for frame in block {
                 self.process(frame);
             }
-
             self.trig
         }
         fn process_triggers(&mut self) {
