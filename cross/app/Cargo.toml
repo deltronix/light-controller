@@ -26,11 +26,8 @@ embassy-executor = { workspace = true }
 embassy-time = { workspace = true }
 
 
-cortex-m = { version = "0.7.7", features = [
-  "inline-asm",
-  "critical-section-single-core",
-] }
-cortex-m-rt = "0.7"
+cortex-m = { workspace = true }
+cortex-m-rt = { workspace = true }
 defmt-rtt = { workspace = true }
 defmt = { workspace = true }
 

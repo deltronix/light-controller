@@ -16,6 +16,7 @@ use embassy_stm32::dma::{ReadableRingBuffer, TransferOptions, WritableRingBuffer
 use embassy_stm32::gpio::Output;
 use embassy_stm32::pac;
 use embassy_stm32::peripherals::TIM12;
+use embassy_stm32::spi::Spi;
 use embassy_stm32::time::Hertz;
 use embassy_stm32::timer::simple_pwm::SimplePwm;
 
@@ -26,6 +27,7 @@ use embassy_sync::blocking_mutex::raw::{NoopRawMutex, ThreadModeRawMutex};
 use embassy_sync::zerocopy_channel::{Channel, Receiver, Sender};
 use embassy_time::{Duration, Instant, Timer};
 
+use embedded_hal::spi;
 use p9813::P9813;
 use static_cell::StaticCell;
 
@@ -59,10 +61,12 @@ const fn ms_to_frames(ms: f32) -> f32 {
 async fn led_controller(
     mut ev: Receiver<'static, NoopRawMutex, Event>,
     mut pwm: SimplePwm<'static, TIM12>,
+    mut leds: P9813<Spi<'static, embassy_stm32::mode::Blocking>>,
 ) {
     let mut intensity: u16 = 0;
     let max_intensity: u16 = pwm.ch1().max_duty_cycle();
-    let release: u16 = max_intensity / 10;
+    let ratio = 255.0 / pwm.ch1().max_duty_cycle() as f32;
+    let release: u16 = max_intensity / 30;
 
     pwm.ch1().enable();
     loop {
@@ -81,6 +85,8 @@ async fn led_controller(
             intensity = *intensity.checked_sub(release).get_or_insert(0);
         }
         pwm.ch1().set_duty_cycle(intensity);
+        let strip_int: u8 = (intensity as f32 * ratio) as u8;
+        leds.set_colors([(strip_int, 0, strip_int)]).unwrap();
         Timer::after_millis(10).await;
     }
 }
@@ -102,8 +108,8 @@ async fn peak_detector(
         ms_to_frames(80.0),
         ms_to_frames(20.0),
         ms_to_frames(80.0),
-        0.02,
-        0.01,
+        0.05,
+        0.04,
     );
 
     rb_in.clear();
@@ -124,16 +130,17 @@ async fn peak_detector(
         };
 
         samples = frames.map(|f| f.to_float_frame());
-        triggers = transient_detector.process_block(&samples);
-        triggers.iter().enumerate().for_each(|(ch, t)| {
-            if t.is_some_and(|t| t) {
-                if let Some(event) = ev.try_send() {
-                    *event = Event::AnalogTrigger(ch);
-                    ev.send_done();
+        for frame in samples {
+            triggers = transient_detector.process(&frame);
+            triggers.iter().enumerate().for_each(|(ch, t)| {
+                if t.is_some_and(|t| t) {
+                    if let Some(event) = ev.try_send() {
+                        *event = Event::AnalogTrigger(ch);
+                        ev.send_done();
+                    }
                 }
-            }
-        });
-        debug!("max diff: {}", transient_detector.max_diff[1]);
+            });
+        }
         // debug!(
         //     "processing time: {}us",
         //     (Instant::now() - start).as_micros()
@@ -229,9 +236,10 @@ async fn main(spawner: Spawner) {
     let event_channel = EVENT_CHANNEL.init_with(|| Channel::new(event_buffer));
     let (event_sender, event_receiver) = event_channel.split();
 
+    //p9813.set_colors(&[(255u8, 0u8, 255u8)]).unwrap();
     defmt::unwrap!(spawner.spawn(peak_detector(adc_dma, ld2, event_sender)));
     defmt::unwrap!(spawner.spawn(signal_generator(dac1_dma)));
-    defmt::unwrap!(spawner.spawn(led_controller(event_receiver, ld3)));
+    defmt::unwrap!(spawner.spawn(led_controller(event_receiver, ld3, p9813)));
 
     Timer::after_millis(200).await;
     pac::ADC2.cr().modify(|cr| cr.set_adstart(true));

@@ -1,13 +1,5 @@
 # This file was automatically generated.
 [target.'cfg(all(target_arch = "arm", target_os = "none"))']
-runner = [
-  "probe-rs",
-  "run",
-  "--chip",
-  "stm32h743zitx",
-  "--log-format",
-  "{L} {s}",
-]
 
 # rustflags = [
 #   # "-C", "linker=flip-link",
