@@ -162,7 +162,7 @@ impl Board {
         };
         let p9813: P9813<Spi<'static, embassy_stm32::mode::Blocking>> = {
             use embassy_stm32::spi::Config;
-            let sck = p.PG11;
+            let sck = p.PB3;
             let mosi = p.PD7;
             let spi = Spi::new_blocking_txonly(p.SPI1, sck, mosi, Config::default());
             P9813::new(spi)
