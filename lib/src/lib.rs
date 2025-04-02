@@ -1,7 +1,13 @@
 #![no_std]
 
 pub mod dsp {
-    use num_traits::float::Float;
+    use num_traits::Float;
+    pub struct EnvelopeDetector<const N_CHANNELS: usize> {
+        attack: f32,
+        release: f32,
+        last_frame: [f32; N_CHANNELS],
+    }
+
     pub struct TransientDetector<const N_CHANNELS: usize> {
         fast_attack: f32,
         fast_release: f32,
@@ -67,15 +73,14 @@ pub mod dsp {
 
                 let env_diff = self.last_fast_frame[ch] - self.last_slow_frame[ch];
                 self.max_diff[ch] = env_diff;
-                self.process_triggers();
             });
+            self.process_triggers();
             self.trig
         }
         pub fn process_block(&mut self, block: &[[f32; N_CHANNELS]]) -> [Option<bool>; N_CHANNELS] {
             for frame in block {
                 self.process(frame);
             }
-
             self.trig
         }
         fn process_triggers(&mut self) {
@@ -91,45 +96,5 @@ pub mod dsp {
                 }
             });
         }
-    }
-}
-
-#[cfg(target_arch = "arm")]
-pub mod setup {
-
-    use embassy_stm32::Config;
-    use embassy_stm32::Peripherals;
-
-    pub fn clock_config(mut config: Config) -> Peripherals {
-        use embassy_stm32::rcc::*;
-        //let mut config = Config::default();
-
-        //config.rcc.hsi = Some(HSIPrescaler::DIV2);
-        config.rcc.pll1 = Some(Pll {
-            source: PllSource::HSI,   // 64 MHz
-            prediv: PllPreDiv::DIV4,  // 16 MHz
-            mul: PllMul::MUL50,       // 800 MHz
-            divp: Some(PllDiv::DIV2), // 400 MHz
-            divq: None,
-            divr: None,
-        });
-        config.rcc.pll2 = Some(Pll {
-            source: PllSource::HSI,   // 64 MHz
-            prediv: PllPreDiv::DIV4,  // 16 MHz
-            mul: PllMul::MUL50,       // 800 MHz
-            divp: Some(PllDiv::DIV8), // 100MHz
-            divq: None,
-            divr: None,
-        });
-        config.rcc.sys = Sysclk::PLL1_P; // 400 MHz
-        config.rcc.ahb_pre = AHBPrescaler::DIV2; // 200 Mhz
-        config.rcc.apb1_pre = APBPrescaler::DIV4; // 100 Mhz
-        config.rcc.apb2_pre = APBPrescaler::DIV4; // 100 Mhz
-        config.rcc.apb3_pre = APBPrescaler::DIV4; // 100 Mhz
-        config.rcc.apb4_pre = APBPrescaler::DIV4; // 100 Mhz
-        config.rcc.voltage_scale = VoltageScale::Scale1;
-        config.rcc.mux.adcsel = mux::Adcsel::PLL2_P;
-
-        embassy_stm32::init(config)
     }
 }

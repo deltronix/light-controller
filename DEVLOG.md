@@ -59,3 +59,5 @@ However this represents several challenges:
 
 - With the current Transient Detection algorithm only a "unit" trigger is generated.
 - RMS calculations are fairly expensive although they could be delayed to when they are necessary
+
+## 27-03-2025
