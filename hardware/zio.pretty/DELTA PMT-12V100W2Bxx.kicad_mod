@@ -1,0 +1,81 @@
+(footprint "DELTA PMT-12V100W2Bxx"
+	(version 20241229)
+	(generator "pcbnew")
+	(generator_version "9.0")
+	(layer "F.Cu")
+	(property "Reference" "REF**"
+		(at 12 -126 0)
+		(unlocked yes)
+		(layer "F.SilkS")
+		(uuid "eebde456-12c1-4ec0-87d4-557939472abc")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.1)
+			)
+		)
+	)
+	(property "Value" "DELTA PMT-12V100W2Bxx"
+		(at 12 -124.5 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(uuid "1e68bf5a-3d67-42a8-b989-fac43223ebcf")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "228da7d3-bdf2-4461-a500-31319337d89a")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "8ccf127c-831b-4730-abe9-44aecd7b1f2a")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr smd)
+	(fp_rect
+		(start 0 -129)
+		(end 97 0)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill no)
+		(layer "User.2")
+		(uuid "401f81a2-1ee2-4ebc-9dd0-6688aa03db61")
+	)
+	(fp_text user "${REFERENCE}"
+		(at 12 -123 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(uuid "8a16e43a-8509-43d3-94ff-89a8bf1ed4bd")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(embedded_fonts no)
+)
