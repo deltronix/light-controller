@@ -86,7 +86,7 @@ async fn led_controller(
         }
         pwm.ch1().set_duty_cycle(intensity);
         let strip_int: u8 = (intensity as f32 * ratio) as u8;
-        leds.set_colors([(strip_int, 0, strip_int)]).unwrap();
+        // leds.set_colors([(strip_int, 0, strip_int); 9]).unwrap();
         Timer::after_millis(10).await;
     }
 }
@@ -215,7 +215,7 @@ async fn main(spawner: Spawner) {
         dac1_dma,
         adc2,
         analog_clock,
-        p9813,
+        mut p9813,
     } = board::Board::init(p);
 
     static ADC_DMA_BUFFER: StaticCell<AdcDmaBuffer> = StaticCell::new();
@@ -236,7 +236,7 @@ async fn main(spawner: Spawner) {
     let event_channel = EVENT_CHANNEL.init_with(|| Channel::new(event_buffer));
     let (event_sender, event_receiver) = event_channel.split();
 
-    //p9813.set_colors(&[(255u8, 0u8, 255u8)]).unwrap();
+    p9813.set_colors(&[(255u8, 0u8, 255u8); 9]).unwrap();
     defmt::unwrap!(spawner.spawn(peak_detector(adc_dma, ld2, event_sender)));
     defmt::unwrap!(spawner.spawn(signal_generator(dac1_dma)));
     defmt::unwrap!(spawner.spawn(led_controller(event_receiver, ld3, p9813)));
