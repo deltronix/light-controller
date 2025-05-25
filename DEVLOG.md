@@ -21,7 +21,7 @@ For this early prototype stage the cheapness and simplicity of the P9813 modules
 
 - [ ] Custom solution
 - [x] P9813 Modules
-- [ ] TLC5947
+- [ ] TLC5947 -> Further development!
 
 [KD3]:
 
