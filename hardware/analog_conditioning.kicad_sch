@@ -2349,6 +2349,18 @@
 		(uuid "a468daf2-34c2-4c8a-a5a5-552ad50f47ba")
 	)
 	(junction
+		(at 172.72 68.58)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "a9d807a2-39ec-446b-833d-2315da0b8ef9")
+	)
+	(junction
+		(at 172.72 63.5)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "b292d3c8-831f-42d0-b96e-edead77b258e")
+	)
+	(junction
 		(at 228.6 76.2)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -2491,6 +2503,16 @@
 			(type default)
 		)
 		(uuid "066408a4-b00b-4f8c-9073-050d62148dcd")
+	)
+	(wire
+		(pts
+			(xy 172.72 68.58) (xy 185.42 68.58)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "06693859-384d-4c15-9768-f7f4ef3fd623")
 	)
 	(wire
 		(pts
@@ -3881,6 +3903,16 @@
 			(type default)
 		)
 		(uuid "e6472bf2-b2b7-4ecf-b549-81be00c9e25c")
+	)
+	(wire
+		(pts
+			(xy 172.72 63.5) (xy 185.42 63.5)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e8fc012c-b61b-40a9-a787-cd99e391e1b7")
 	)
 	(wire
 		(pts
@@ -7758,7 +7790,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "d759c24a-68a1-49c5-96e2-0b09250392c5")
-		(property "Reference" "#PWR"
+		(property "Reference" "#PWR?"
 			(at 57.15 147.32 0)
 			(effects
 				(font
@@ -7805,7 +7837,14 @@
 		(pin "1"
 			(uuid "d830614b-40c4-4e52-ac13-31ccbabe82d3")
 		)
-		(instances)
+		(instances
+			(project "dmx_controller"
+				(path "/c888dd99-01b7-4b4b-82e5-501bcedd41ed/05e4dc0b-bade-45d2-8fa1-6b1ecf425979"
+					(reference "#PWR?")
+					(unit 1)
+				)
+			)
+		)
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -7884,7 +7923,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "d9154772-97e7-4053-a337-cbf98cb1a2d0")
-		(property "Reference" "J"
+		(property "Reference" "J?"
 			(at 179.07 54.61 0)
 			(effects
 				(font
@@ -7957,7 +7996,14 @@
 		(pin "8"
 			(uuid "87292807-c02e-4068-8f64-52bb815e46cb")
 		)
-		(instances)
+		(instances
+			(project "dmx_controller"
+				(path "/c888dd99-01b7-4b4b-82e5-501bcedd41ed/05e4dc0b-bade-45d2-8fa1-6b1ecf425979"
+					(reference "J?")
+					(unit 1)
+				)
+			)
+		)
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -8679,7 +8725,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "fea4dbf2-96b3-4f35-86c7-5a2767843067")
-		(property "Reference" "#PWR"
+		(property "Reference" "#PWR?"
 			(at 57.15 124.46 0)
 			(effects
 				(font
@@ -8726,6 +8772,13 @@
 		(pin "1"
 			(uuid "50079d2e-d99c-4655-a0b5-f9f3d681adf4")
 		)
-		(instances)
+		(instances
+			(project "dmx_controller"
+				(path "/c888dd99-01b7-4b4b-82e5-501bcedd41ed/05e4dc0b-bade-45d2-8fa1-6b1ecf425979"
+					(reference "#PWR?")
+					(unit 1)
+				)
+			)
+		)
 	)
 )

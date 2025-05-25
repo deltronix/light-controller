@@ -143,7 +143,13 @@
       "/mcu/PA3",
       "Net-(J3-Pin_3)",
       "unconnected-(J3-Pin_4-Pad4)",
-      "Net-(U2B-+)"
+      "Net-(U2B-+)",
+      "Net-(U2B--)",
+      "Net-(U1B--)",
+      "/analog_conditioning/analog_in_1",
+      "unconnected-(J4-Pin_8-Pad8)",
+      "/analog_conditioning/analog_in_2",
+      "unconnected-(J4-Pin_4-Pad4)"
     ],
     "high_contrast_mode": 0,
     "net_color_mode": 2,

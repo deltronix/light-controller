@@ -7063,6 +7063,16 @@
 	)
 	(wire
 		(pts
+			(xy 43.18 119.38) (xy 53.34 119.38)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2f6bcab4-b78e-4681-a1b4-d5586f54e2f3")
+	)
+	(wire
+		(pts
 			(xy 93.98 137.16) (xy 106.68 137.16)
 		)
 		(stroke
@@ -8620,16 +8630,6 @@
 			(type default)
 		)
 		(uuid "cc012fb4-3c95-49fd-9f7f-bed98e65511d")
-	)
-	(wire
-		(pts
-			(xy 21.59 119.38) (xy 53.34 119.38)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "cc2bb8db-9182-4524-b7be-56d22aa1765f")
 	)
 	(wire
 		(pts
@@ -11930,17 +11930,6 @@
 			(justify right)
 		)
 		(uuid "daf6f593-5cd3-4ff0-ab4d-dfc95ce8a481")
-	)
-	(hierarchical_label "adc3_0"
-		(shape input)
-		(at 26.67 133.35 180)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "fcad4f14-b327-4388-9be8-1e077f0352f2")
 	)
 	(symbol
 		(lib_id "Connector_Generic:Conn_02x08_Odd_Even")

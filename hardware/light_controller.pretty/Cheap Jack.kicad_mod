@@ -1,0 +1,454 @@
+(footprint "Cheap Jack"
+	(version 20241229)
+	(generator "pcbnew")
+	(generator_version "9.0")
+	(layer "F.Cu")
+	(descr "M Series, 6.35mm (1/4in) stereo jack, switched, full threaded nose, straight PCB pins, gold plated contacts, https://www.neutrik.com/en/product/nmj6hfd2-au")
+	(tags "neutrik jack m")
+	(property "Reference" "J1"
+		(at 6.35 -3 180)
+		(layer "F.SilkS")
+		(uuid "be5fdd79-0105-46df-9c49-4e9439c52553")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Value" "AudioJack2"
+		(at 11.6 12.515 180)
+		(layer "F.Fab")
+		(uuid "fc05f342-882b-4ece-a72d-f07d9081e60f")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "376fc056-9a47-4637-a04d-503420d8c53b")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" "Audio Jack, 2 Poles (Mono / TS)"
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "b4e3a073-c63c-4497-a1be-43f6b4056698")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr through_hole)
+	(fp_line
+		(start -7.07 3.645)
+		(end -4.07 3.645)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "a0e01dc1-aea4-493b-a089-24e896b3b562")
+	)
+	(fp_line
+		(start -7.07 12.545)
+		(end -7.07 3.645)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "f7ba607d-3394-44df-b0ee-38d11e9ee045")
+	)
+	(fp_line
+		(start -7.07 12.585)
+		(end -4.07 12.585)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "78c48654-6b7f-46ef-b5b0-734f3a320981")
+	)
+	(fp_line
+		(start -4.07 -1.105)
+		(end -1.35 -1.105)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "d8647e0e-6306-41bc-8adb-de447cbf8225")
+	)
+	(fp_line
+		(start -4.07 3.645)
+		(end -4.07 -1.105)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "9b89d4b9-32e6-40a1-b521-3624ceab895c")
+	)
+	(fp_line
+		(start -4.07 17.335)
+		(end -4.07 12.585)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "24f03b7c-33d8-4aaa-aa5b-b632e55aec5f")
+	)
+	(fp_line
+		(start -1.35 17.335)
+		(end -4.07 17.335)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "a06ee3df-31d2-4a70-bd91-9445923c2361")
+	)
+	(fp_line
+		(start 1.4 -1.105)
+		(end 5 -1.105)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "b7eff52e-b258-410a-877e-43bc5fe0f901")
+	)
+	(fp_line
+		(start 5 17.335)
+		(end 1.4 17.335)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "fb7c1199-9445-42cf-845e-678f25deb327")
+	)
+	(fp_line
+		(start 7.7 -1.105)
+		(end 11.3 -1.105)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "6e754f12-74dd-42c8-98cb-45bbb03711fc")
+	)
+	(fp_line
+		(start 11.3 17.335)
+		(end 7.7 17.335)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "e35a3c5a-2d42-4f2b-90c3-0fba416b2a2f")
+	)
+	(fp_line
+		(start 17.17 -1.105)
+		(end 14.05 -1.105)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "d603c631-6a7d-49cb-b1a3-86cf4fbe0a16")
+	)
+	(fp_line
+		(start 17.17 2.495)
+		(end 17.17 -1.105)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "90d274dd-7f9e-43a8-bfb9-46dd35a5fc82")
+	)
+	(fp_line
+		(start 17.17 2.495)
+		(end 26.02 2.495)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "354a6367-39da-433e-b8b9-6a3b19d1bec5")
+	)
+	(fp_line
+		(start 17.17 13.735)
+		(end 26.02 13.735)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "2da864c2-303d-4e14-aa71-181eff9858a9")
+	)
+	(fp_line
+		(start 17.17 17.335)
+		(end 14.05 17.335)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "3922a83d-c91a-4b49-883c-06144d88d693")
+	)
+	(fp_line
+		(start 17.17 17.335)
+		(end 17.17 13.735)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "cac01dd1-0afc-4ba5-b368-16ea16a892f1")
+	)
+	(fp_line
+		(start 26.02 13.735)
+		(end 26.02 2.495)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "997c4046-64f2-4e81-846a-86ca619a7a38")
+	)
+	(fp_line
+		(start -7.45 18.23)
+		(end -7.45 -2)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(layer "F.CrtYd")
+		(uuid "ac674809-8949-465b-af50-4697912ae0cb")
+	)
+	(fp_line
+		(start -7.45 18.23)
+		(end 26.4 18.23)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(layer "F.CrtYd")
+		(uuid "d28aa51a-84a6-4913-bbdb-5fd754025bd9")
+	)
+	(fp_line
+		(start 26.4 -2)
+		(end -7.45 -2)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(layer "F.CrtYd")
+		(uuid "383d64b3-ac16-4465-869d-9b17e408fa03")
+	)
+	(fp_line
+		(start 26.4 18.23)
+		(end 26.4 -2)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(layer "F.CrtYd")
+		(uuid "7bc1dd4c-ea65-4efe-b570-48a1894df2bc")
+	)
+	(fp_line
+		(start -6.95 3.765)
+		(end -3.95 3.765)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "1001c360-6508-4a3e-8e7b-9b727904b529")
+	)
+	(fp_line
+		(start -6.95 12.465)
+		(end -6.95 3.765)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "a15d3e37-3734-4e45-b5bc-bb371378e260")
+	)
+	(fp_line
+		(start -6.95 12.465)
+		(end -3.95 12.465)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "6e8e0436-315a-4858-882a-24f9c7f1c97d")
+	)
+	(fp_line
+		(start -3.95 17.215)
+		(end -3.95 -0.985)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "7b5803da-4988-431c-a45d-f401ff9ad811")
+	)
+	(fp_line
+		(start 17.05 -0.985)
+		(end -3.95 -0.985)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "3698617f-9cbf-4fc9-a85c-71528f27cdc7")
+	)
+	(fp_line
+		(start 17.05 17.215)
+		(end -3.95 17.215)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "133bd53f-d9d0-4cb4-accf-bea84e69cf50")
+	)
+	(fp_line
+		(start 17.05 17.215)
+		(end 17.05 -0.985)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "84dc3e88-8ed0-49b0-83f6-9be4e5409684")
+	)
+	(fp_line
+		(start 25.9 2.615)
+		(end 17.05 2.615)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "b621b2b5-96aa-4494-b46c-519ee19b9bc9")
+	)
+	(fp_line
+		(start 25.9 13.615)
+		(end 17.05 13.615)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "1597550e-d320-44d6-8fe0-3d71f52f0de8")
+	)
+	(fp_line
+		(start 25.9 13.615)
+		(end 25.9 2.615)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "09fd56c6-2562-487c-bc47-a55f24785c9c")
+	)
+	(fp_text user "${REFERENCE}"
+		(at 6.35 8.115 180)
+		(layer "F.Fab")
+		(uuid "c1e3cc53-189b-461a-88c4-c96c2baf1fe0")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(pad "R" thru_hole oval
+		(at 6.35 0)
+		(size 5.5 3)
+		(drill oval 4.2 1.5)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(thermal_bridge_angle 45)
+		(uuid "e7587c72-afc2-4e01-9bf8-a654c7a5ecca")
+	)
+	(pad "RN" thru_hole oval
+		(at 6.35 16.23)
+		(size 5.5 3)
+		(drill oval 4.2 1.5)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(thermal_bridge_angle 45)
+		(uuid "4c1d0d35-3223-4e70-a37d-b276319aa14c")
+	)
+	(pad "S" thru_hole oval
+		(at 12.7 0)
+		(size 5.5 3)
+		(drill oval 4.2 1.5)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(thermal_bridge_angle 45)
+		(uuid "0894f265-bc4d-4607-966b-6606f203b831")
+	)
+	(pad "SN" thru_hole oval
+		(at 12.7 16.23)
+		(size 5.5 3)
+		(drill oval 4.2 1.5)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(thermal_bridge_angle 45)
+		(uuid "60860036-5e57-4547-bbda-fb34d4b1eab4")
+	)
+	(pad "T" thru_hole oval
+		(at 0 0)
+		(size 5.5 3)
+		(drill oval 4.2 1.5)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(thermal_bridge_angle 45)
+		(uuid "f6c26b7d-8d45-4b34-91d7-e670c7cfdab5")
+	)
+	(pad "TN" thru_hole oval
+		(at 0 16.23)
+		(size 5.5 3)
+		(drill oval 4.2 1.5)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(thermal_bridge_angle 45)
+		(uuid "0b65335c-0f6f-41ce-989b-fdc8c735247b")
+	)
+	(embedded_fonts no)
+	(model "${KICAD9_3DMODEL_DIR}/Connector_Audio.3dshapes/Jack_6.35mm_Neutrik_NMJ6HFD2-AU_Horizontal.wrl"
+		(offset
+			(xyz 0 0 0)
+		)
+		(scale
+			(xyz 1 1 1)
+		)
+		(rotate
+			(xyz 0 0 0)
+		)
+	)
+)
