@@ -754,6 +754,10 @@
     [
       "c469fda9-d9d3-4afe-808a-c6193c00a7cf",
       "mcu"
+    ],
+    [
+      "1ac097af-26dd-40a8-8c92-f70c187fd707",
+      "preamps"
     ]
   ],
   "text_variables": {}

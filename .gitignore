@@ -1,3 +1,5 @@
 /target
 cross/target
 hardware/dmx_controller-backups
+hardware/~dmx_controller.kicad_pcb.lck
+hardware/~dmx_controller.kicad_sch.lck

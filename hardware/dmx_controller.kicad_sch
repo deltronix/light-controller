@@ -881,6 +881,48 @@
 		)
 	)
 	(sheet
+		(at 59.944 46.99)
+		(size 43.434 70.104)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "1ac097af-26dd-40a8-8c92-f70c187fd707")
+		(property "Sheetname" "preamps"
+			(at 59.944 46.2784 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "preamps.kicad_sch"
+			(at 59.944 117.6786 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "dmx_controller"
+				(path "/c888dd99-01b7-4b4b-82e5-501bcedd41ed"
+					(page "4")
+				)
+			)
+		)
+	)
+	(sheet
 		(at 203.2 25.4)
 		(size 25.4 121.92)
 		(exclude_from_sim no)
