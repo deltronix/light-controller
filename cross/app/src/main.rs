@@ -27,7 +27,6 @@ use embassy_sync::blocking_mutex::raw::{NoopRawMutex, ThreadModeRawMutex};
 use embassy_sync::zerocopy_channel::{Channel, Receiver, Sender};
 use embassy_time::{Duration, Instant, Timer};
 
-use embedded_hal::spi;
 use p9813::P9813;
 use static_cell::StaticCell;
 
