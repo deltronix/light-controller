@@ -1,0 +1,965 @@
+{
+  "board": {
+    "3dviewports": [],
+    "design_settings": {
+      "defaults": {
+        "apply_defaults_to_fp_fields": false,
+        "apply_defaults_to_fp_shapes": false,
+        "apply_defaults_to_fp_text": false,
+        "board_outline_line_width": 0.05,
+        "copper_line_width": 0.2,
+        "copper_text_italic": false,
+        "copper_text_size_h": 1.5,
+        "copper_text_size_v": 1.5,
+        "copper_text_thickness": 0.3,
+        "copper_text_upright": false,
+        "courtyard_line_width": 0.05,
+        "dimension_precision": 4,
+        "dimension_units": 3,
+        "dimensions": {
+          "arrow_length": 1270000,
+          "extension_offset": 500000,
+          "keep_text_aligned": true,
+          "suppress_zeroes": false,
+          "text_position": 0,
+          "units_format": 1
+        },
+        "fab_line_width": 0.1,
+        "fab_text_italic": false,
+        "fab_text_size_h": 1.0,
+        "fab_text_size_v": 1.0,
+        "fab_text_thickness": 0.15,
+        "fab_text_upright": false,
+        "other_line_width": 0.1,
+        "other_text_italic": false,
+        "other_text_size_h": 1.0,
+        "other_text_size_v": 1.0,
+        "other_text_thickness": 0.15,
+        "other_text_upright": false,
+        "pads": {
+          "drill": 0.762,
+          "height": 1.524,
+          "width": 1.524
+        },
+        "silk_line_width": 0.1,
+        "silk_text_italic": false,
+        "silk_text_size_h": 1.0,
+        "silk_text_size_v": 1.0,
+        "silk_text_thickness": 0.1,
+        "silk_text_upright": false,
+        "zones": {
+          "min_clearance": 0.5
+        }
+      },
+      "diff_pair_dimensions": [
+        {
+          "gap": 0.0,
+          "via_gap": 0.0,
+          "width": 0.0
+        }
+      ],
+      "drc_exclusions": [],
+      "meta": {
+        "version": 2
+      },
+      "rule_severities": {
+        "annular_width": "error",
+        "clearance": "error",
+        "connection_width": "warning",
+        "copper_edge_clearance": "error",
+        "copper_sliver": "warning",
+        "courtyards_overlap": "error",
+        "creepage": "error",
+        "diff_pair_gap_out_of_range": "error",
+        "diff_pair_uncoupled_length_too_long": "error",
+        "drill_out_of_range": "error",
+        "duplicate_footprints": "warning",
+        "extra_footprint": "warning",
+        "footprint": "error",
+        "footprint_filters_mismatch": "ignore",
+        "footprint_symbol_mismatch": "warning",
+        "footprint_type_mismatch": "ignore",
+        "hole_clearance": "error",
+        "hole_near_hole": "error",
+        "hole_to_hole": "error",
+        "holes_co_located": "warning",
+        "invalid_outline": "error",
+        "isolated_copper": "warning",
+        "item_on_disabled_layer": "error",
+        "items_not_allowed": "error",
+        "length_out_of_range": "error",
+        "lib_footprint_issues": "warning",
+        "lib_footprint_mismatch": "warning",
+        "malformed_courtyard": "error",
+        "microvia_drill_out_of_range": "error",
+        "mirrored_text_on_front_layer": "warning",
+        "missing_courtyard": "ignore",
+        "missing_footprint": "warning",
+        "net_conflict": "warning",
+        "nonmirrored_text_on_back_layer": "warning",
+        "npth_inside_courtyard": "ignore",
+        "padstack": "warning",
+        "pth_inside_courtyard": "ignore",
+        "shorting_items": "error",
+        "silk_edge_clearance": "warning",
+        "silk_over_copper": "warning",
+        "silk_overlap": "warning",
+        "skew_out_of_range": "error",
+        "solder_mask_bridge": "error",
+        "starved_thermal": "error",
+        "text_height": "warning",
+        "text_on_edge_cuts": "error",
+        "text_thickness": "warning",
+        "through_hole_pad_without_hole": "error",
+        "too_many_vias": "error",
+        "track_angle": "error",
+        "track_dangling": "warning",
+        "track_segment_length": "error",
+        "track_width": "error",
+        "tracks_crossing": "error",
+        "unconnected_items": "error",
+        "unresolved_variable": "error",
+        "via_dangling": "warning",
+        "zones_intersect": "error"
+      },
+      "rules": {
+        "max_error": 0.005,
+        "min_clearance": 0.0,
+        "min_connection": 0.0,
+        "min_copper_edge_clearance": 0.5,
+        "min_groove_width": 0.0,
+        "min_hole_clearance": 0.25,
+        "min_hole_to_hole": 0.25,
+        "min_microvia_diameter": 0.2,
+        "min_microvia_drill": 0.1,
+        "min_resolved_spokes": 2,
+        "min_silk_clearance": 0.0,
+        "min_text_height": 0.8,
+        "min_text_thickness": 0.08,
+        "min_through_hole_diameter": 0.3,
+        "min_track_width": 0.0,
+        "min_via_annular_width": 0.1,
+        "min_via_diameter": 0.5,
+        "solder_mask_to_copper_clearance": 0.005,
+        "use_height_for_length_calcs": true
+      },
+      "teardrop_options": [
+        {
+          "td_onpthpad": true,
+          "td_onroundshapesonly": false,
+          "td_onsmdpad": true,
+          "td_ontrackend": false,
+          "td_onvia": true
+        }
+      ],
+      "teardrop_parameters": [
+        {
+          "td_allow_use_two_tracks": true,
+          "td_curve_segcount": 0,
+          "td_height_ratio": 1.0,
+          "td_length_ratio": 0.5,
+          "td_maxheight": 2.0,
+          "td_maxlen": 1.0,
+          "td_on_pad_in_zone": false,
+          "td_target_name": "td_round_shape",
+          "td_width_to_size_filter_ratio": 0.9
+        },
+        {
+          "td_allow_use_two_tracks": true,
+          "td_curve_segcount": 0,
+          "td_height_ratio": 1.0,
+          "td_length_ratio": 0.5,
+          "td_maxheight": 2.0,
+          "td_maxlen": 1.0,
+          "td_on_pad_in_zone": false,
+          "td_target_name": "td_rect_shape",
+          "td_width_to_size_filter_ratio": 0.9
+        },
+        {
+          "td_allow_use_two_tracks": true,
+          "td_curve_segcount": 0,
+          "td_height_ratio": 1.0,
+          "td_length_ratio": 0.5,
+          "td_maxheight": 2.0,
+          "td_maxlen": 1.0,
+          "td_on_pad_in_zone": false,
+          "td_target_name": "td_track_end",
+          "td_width_to_size_filter_ratio": 0.9
+        }
+      ],
+      "track_widths": [
+        0.0,
+        0.5
+      ],
+      "tuning_pattern_settings": {
+        "diff_pair_defaults": {
+          "corner_radius_percentage": 80,
+          "corner_style": 1,
+          "max_amplitude": 1.0,
+          "min_amplitude": 0.2,
+          "single_sided": false,
+          "spacing": 1.0
+        },
+        "diff_pair_skew_defaults": {
+          "corner_radius_percentage": 80,
+          "corner_style": 1,
+          "max_amplitude": 1.0,
+          "min_amplitude": 0.2,
+          "single_sided": false,
+          "spacing": 0.6
+        },
+        "single_track_defaults": {
+          "corner_radius_percentage": 80,
+          "corner_style": 1,
+          "max_amplitude": 1.0,
+          "min_amplitude": 0.2,
+          "single_sided": false,
+          "spacing": 0.6
+        }
+      },
+      "via_dimensions": [
+        {
+          "diameter": 0.0,
+          "drill": 0.0
+        }
+      ],
+      "zones_allow_external_fillets": false
+    },
+    "ipc2581": {
+      "dist": "",
+      "distpn": "",
+      "internal_id": "",
+      "mfg": "",
+      "mpn": ""
+    },
+    "layer_pairs": [],
+    "layer_presets": [],
+    "viewports": []
+  },
+  "boards": [],
+  "cvpcb": {
+    "equivalence_files": []
+  },
+  "libraries": {
+    "pinned_footprint_libs": [],
+    "pinned_symbol_libs": []
+  },
+  "meta": {
+    "filename": "preamp_board.kicad_pro",
+    "version": 3
+  },
+  "net_settings": {
+    "classes": [
+      {
+        "bus_width": 12,
+        "clearance": 0.2,
+        "diff_pair_gap": 0.25,
+        "diff_pair_via_gap": 0.25,
+        "diff_pair_width": 0.2,
+        "line_style": 0,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "name": "Default",
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "priority": 2147483647,
+        "schematic_color": "rgba(0, 0, 0, 0.000)",
+        "track_width": 0.2,
+        "via_diameter": 0.6,
+        "via_drill": 0.3,
+        "wire_width": 6
+      },
+      {
+        "bus_width": 12,
+        "line_style": 0,
+        "name": "ADC",
+        "pcb_color": "rgb(0, 0, 255)",
+        "priority": 1,
+        "schematic_color": "rgb(9, 16, 255)",
+        "wire_width": 6
+      },
+      {
+        "name": "ETHERNET",
+        "pcb_color": "rgb(176, 176, 176)",
+        "priority": 5,
+        "schematic_color": "rgb(194, 0, 194)"
+      },
+      {
+        "bus_width": 12,
+        "line_style": 0,
+        "name": "I2C",
+        "pcb_color": "rgb(255, 153, 0)",
+        "priority": 4,
+        "schematic_color": "rgb(221, 133, 0)",
+        "wire_width": 6
+      },
+      {
+        "name": "POWER",
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "priority": 0,
+        "schematic_color": "rgb(255, 0, 47)",
+        "track_width": 1.0
+      },
+      {
+        "name": "SPI",
+        "pcb_color": "rgb(255, 70, 36)",
+        "priority": 2,
+        "schematic_color": "rgb(132, 0, 0)"
+      },
+      {
+        "name": "UART",
+        "pcb_color": "rgb(255, 212, 84)",
+        "priority": 3,
+        "schematic_color": "rgb(132, 132, 0)"
+      },
+      {
+        "name": "USB",
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "priority": 6,
+        "schematic_color": "rgb(132, 0, 132)"
+      }
+    ],
+    "meta": {
+      "version": 4
+    },
+    "net_colors": null,
+    "netclass_assignments": null,
+    "netclass_patterns": [
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PD5"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "unconnected-(U3-~{BOOT0}-Pad7)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(D1-K)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PG14"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PE8"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(U201B-+)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(R201-Pad1)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PD6"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "unconnected-(U3-PH1-Pad31)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PB6"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/analog_conditioning/analog_out_1"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/analog_conditioning/analog_out_2"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PB2"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PE9"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(U202B--)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PF11"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(J3-Pin_3)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "unconnected-(J201-Pin_8-Pad8)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PE12"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PB15"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(U203A--)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PB10"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(C6-Pad1)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PD14"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PF15"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(R217-Pad2)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(C3-Pad1)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PF4"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PC7"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(C1-Pad1)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PC13"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(U202A-+)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PE13"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PB4"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/DISPLAY BUTTONS"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PD4"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PA6"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PD11"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PF12"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PG15"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PG8"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PG7"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PD9"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/analog_conditioning/V_REF_1_65V"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PE10"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PF0"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PA13"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "unconnected-(U3-NC-Pad26)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PC11"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/analog_conditioning/analog_in_1"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "unconnected-(U3-NC-Pad10)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PE2"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PC12"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PC14"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "unconnected-(J201-Pin_4-Pad4)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/analog_conditioning/analog_in_2"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(U202A--)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(D3-K)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PE11"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PD7"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(J3-Pin_7)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "unconnected-(U3-VBAT-Pad33)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "unconnected-(U3-U5V-Pad80)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PF13"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PD3"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PG10"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PA9"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PG1"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PB7"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PC9"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PE15"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "unconnected-(U3-IOREF-Pad12)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PF6"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(D1-A)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PD15"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(U2B-+)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "+3V3"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(U1B-+)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(U201A-+)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PA15"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(R218-Pad1)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PA8"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PB1"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PG4"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PA14"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PB12"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(C6-Pad2)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PG2"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PD13"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PF14"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PB14"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PB3"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PE3"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(R220-Pad1)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "unconnected-(U3-E5V-Pad6)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(R210-Pad1)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PA0"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PG6"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PE14"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "unconnected-(U3-NC-Pad67)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(R219-Pad2)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "unconnected-(U3-+5V-Pad18)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "unconnected-(U3-~{RST}-Pad14)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(C205-Pad1)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PC0"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "unconnected-(U3-AGND-Pad104)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PC6"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(U201A--)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(C201-Pad1)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PC15"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PC10"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PD12"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(C4-Pad1)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PB11"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(U202B-+)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PG9"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PA5"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PB5"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PD1"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PG3"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PF2"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PD2"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PG0"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PG5"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PE1"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PA10"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PB0"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PD8"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PD10"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "unconnected-(U3-PH0-Pad29)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PF1"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(U203B-+)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(U201B--)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PE0"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PG12"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PE6"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PE7"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PE5"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(D3-A)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PA4"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PE4"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PD0"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(C3-Pad2)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "unconnected-(U3-VDD-Pad5)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "Net-(U203A-+)"
+      },
+      {
+        "netclass": "Default",
+        "pattern": "/mcu/PC8"
+      },
+      {
+        "netclass": "ADC",
+        "pattern": "adc*"
+      },
+      {
+        "netclass": "I2C",
+        "pattern": "i2c*"
+      },
+      {
+        "netclass": "USB",
+        "pattern": "usb*"
+      },
+      {
+        "netclass": "ETHERNET",
+        "pattern": "eth*"
+      },
+      {
+        "netclass": "SPI",
+        "pattern": "spi*"
+      },
+      {
+        "netclass": "POWER",
+        "pattern": "*12V"
+      },
+      {
+        "netclass": "POWER",
+        "pattern": "*3.3V"
+      },
+      {
+        "netclass": "POWER",
+        "pattern": "GND"
+      }
+    ]
+  },
+  "pcbnew": {
+    "last_paths": {
+      "gencad": "",
+      "idf": "",
+      "netlist": "",
+      "plot": "",
+      "pos_files": "",
+      "specctra_dsn": "",
+      "step": "",
+      "svg": "",
+      "vrml": ""
+    },
+    "page_layout_descr_file": ""
+  },
+  "schematic": {
+    "legacy_lib_dir": "",
+    "legacy_lib_list": []
+  },
+  "sheets": [],
+  "text_variables": {}
+}
